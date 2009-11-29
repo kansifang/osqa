@@ -14,12 +14,14 @@ from django.db.models.signals import post_delete, post_save, pre_save
 from django.utils.translation import ugettext as _
 from django.utils.safestring import mark_safe
 import django.dispatch
-import settings
 import logging
+from django.conf import settings
 
 if settings.USE_SPHINX_SEARCH == True:
     from djangosphinx.models import SphinxSearch
+from django_extensions.db.fields import AutoSlugField
 
+from cnprog.utils.html import sanitize_html
 from forum.managers import *
 from const import *
 
@@ -149,8 +151,29 @@ class FlaggedItem(models.Model):
     def __unicode__(self):
         return '[%s] flagged at %s' %(self.user, self.flagged_at)
 
+
+class Activity(models.Model):
+    """
+    We keep some history data for user activities
+    """
+    user = models.ForeignKey(User)
+    activity_type = models.SmallIntegerField(choices=TYPE_ACTIVITY)
+    active_at = models.DateTimeField(default=datetime.datetime.now)
+    content_type   = models.ForeignKey(ContentType)
+    object_id      = models.PositiveIntegerField()
+    content_object = generic.GenericForeignKey('content_type', 'object_id')
+    is_auditted    = models.BooleanField(default=False)
+
+    def __unicode__(self):
+        return u'[%s] was active at %s' % (self.user.username, self.active_at)
+
+    class Meta:
+        db_table = u'activity'
+
+
 class Question(models.Model):
     title    = models.CharField(max_length=300)
+    #slug = AutoSlugField(_('slug'), populate_from='title')
     author   = models.ForeignKey(User, related_name='questions')
     added_at = models.DateTimeField(default=datetime.datetime.now)
     tags     = models.ManyToManyField(Tag, related_name='questions')
@@ -185,19 +208,23 @@ class Question(models.Model):
     tagnames             = models.CharField(max_length=125)
     summary              = models.CharField(max_length=180)
     html                 = models.TextField()
+    
     comments             = generic.GenericRelation(Comment)
     votes                = generic.GenericRelation(Vote)
     flagged_items        = generic.GenericRelation(FlaggedItem)
+    #need this?
+    activity             = generic.GenericRelation(Activity)
 
     if settings.USE_SPHINX_SEARCH == True:
         search = SphinxSearch(
                            index=' '.join(settings.SPHINX_SEARCH_INDICES),
                            mode='SPH_MATCH_ALL',
                         )
-        logging.debug('have sphinx search')
 
     objects = QuestionManager()
-
+    
+    #sanitize_html(markdowner.convert(text))
+    
     def save(self, **kwargs):
         """
         Overridden to manually manage addition of tags when the object
@@ -206,6 +233,7 @@ class Question(models.Model):
         This is required as we're using ``tagnames`` as the sole means of
         adding and editing tags.
         """
+        
         initial_addition = (self.id is None)
         super(Question, self).save(**kwargs)
         if initial_addition:
@@ -325,11 +353,7 @@ class Question(models.Model):
                     out.append(_('%(people)s commented answers') % {'people':people})
                 else:
                     out.append(_('%(people)s commented an answer') % {'people':people})
-            url = settings.APP_URL + self.get_absolute_url()
-            retval = '<a href="%s">%s</a>:<br>\n' % (url,self.title)
-            out = map(lambda x: '<li>' + x + '</li>',out)
-            retval += '<ul>' + '\n'.join(out) + '</ul><br>\n'
-            return retval
+            return out
         else:
             return None
 
@@ -373,7 +397,6 @@ class QuestionRevision(models.Model):
         return self.question.title
 
     def get_absolute_url(self):
-        print 'in QuestionRevision.get_absolute_url()'
         return reverse('question_revisions', args=[self.question.id])
 
     def save(self, **kwargs):
@@ -404,25 +427,6 @@ class AnonymousAnswer(models.Model):
         create_new_answer(question=self.question,wiki=self.wiki,
                             added_at=added_at,text=self.text,
                             author=user)
-        self.delete()
-
-class AnonymousQuestion(models.Model):
-    title = models.CharField(max_length=300)
-    session_key = models.CharField(max_length=40)  #session id for anonymous questions
-    text = models.TextField()
-    summary = models.CharField(max_length=180)
-    tagnames = models.CharField(max_length=125)
-    wiki = models.BooleanField(default=False)
-    added_at = models.DateTimeField(default=datetime.datetime.now)
-    ip_addr = models.IPAddressField(max_length=21) #allow high port numbers
-    author = models.ForeignKey(User,null=True)
-
-    def publish(self,user):
-        from forum.views import create_new_question
-        added_at = datetime.datetime.now()
-        create_new_question(title=self.title, author=user, added_at=added_at,
-                                wiki=self.wiki, tagnames=self.tagnames,
-                                summary=self.summary, text=self.text)
         self.delete()
 
 class Answer(models.Model):
@@ -523,7 +527,7 @@ class Badge(models.Model):
     description = models.CharField(max_length=300)
     multiple    = models.BooleanField(default=False)
     # Denormalised data
-    awarded_count = models.PositiveIntegerField(default=0)
+    awarded_count = models.PositiveIntegerField(default=0, editable=False)
 
     class Meta:
         db_table = u'badge'
@@ -543,8 +547,8 @@ class Badge(models.Model):
 
 class Award(models.Model):
     """The awarding of a Badge to a User."""
-    user       = models.ForeignKey(User, related_name='award_user')
-    badge      = models.ForeignKey(Badge, related_name='award_badge')
+    user       = models.ForeignKey(User, related_name='awards')
+    badge      = models.ForeignKey(Badge, related_name='awards')
     content_type   = models.ForeignKey(ContentType)
     object_id      = models.PositiveIntegerField()
     content_object = generic.GenericForeignKey('content_type', 'object_id')
@@ -574,24 +578,6 @@ class Repute(models.Model):
 
     class Meta:
         db_table = u'repute'
-
-class Activity(models.Model):
-    """
-    We keep some history data for user activities
-    """
-    user = models.ForeignKey(User)
-    activity_type = models.SmallIntegerField(choices=TYPE_ACTIVITY)
-    active_at = models.DateTimeField(default=datetime.datetime.now)
-    content_type   = models.ForeignKey(ContentType)
-    object_id      = models.PositiveIntegerField()
-    content_object = generic.GenericForeignKey('content_type', 'object_id')
-    is_auditted    = models.BooleanField(default=False)
-
-    def __unicode__(self):
-        return u'[%s] was active at %s' % (self.user.username, self.active_at)
-
-    class Meta:
-        db_table = u'activity'
 
 class Book(models.Model):
     """
@@ -659,49 +645,27 @@ QUESTIONS_PER_PAGE_CHOICES = (
    (50, u'50'),
 )
 
-def user_is_username_taken(cls,username):
-    try:
-        cls.objects.get(username=username)
-        return True
-    except cls.MultipleObjectsReturned:
-        return True
-    except cls.DoesNotExist:
-        return False
-
-def user_get_q_sel_email_feed_frequency(self):
-    print 'looking for frequency for user %s' % self
-    try:
-        feed_setting = EmailFeedSetting.objects.get(subscriber=self,feed_type='q_sel')
-    except Exception, e:
-        print 'have error %s' % e.message
-        raise e
-    print 'have freq=%s' % feed_setting.frequency
-    return feed_setting.frequency
-
 User.add_to_class('is_approved', models.BooleanField(default=False))
 User.add_to_class('email_isvalid', models.BooleanField(default=False))
 User.add_to_class('email_key', models.CharField(max_length=32, null=True))
 User.add_to_class('reputation', models.PositiveIntegerField(default=1))
 User.add_to_class('gravatar', models.CharField(max_length=32))
 User.add_to_class('favorite_questions',
-                  models.ManyToManyField(Question, through=FavoriteQuestion,
-                                         related_name='favorited_by'))
+              models.ManyToManyField(Question, through=FavoriteQuestion,
+                                     related_name='favorited_by'))
 User.add_to_class('badges', models.ManyToManyField(Badge, through=Award,
-                                                   related_name='awarded_to'))
-User.add_to_class('gold', models.SmallIntegerField(default=0))
-User.add_to_class('silver', models.SmallIntegerField(default=0))
-User.add_to_class('bronze', models.SmallIntegerField(default=0))
+                                              related_name='awarded_to'))
+User.add_to_class('gold', models.fields.SmallIntegerField(default=0))
+User.add_to_class('silver', models.fields.SmallIntegerField(default=0))
+User.add_to_class('bronze', models.fields.SmallIntegerField(default=0))
 User.add_to_class('questions_per_page',
-                  models.SmallIntegerField(choices=QUESTIONS_PER_PAGE_CHOICES, default=10))
-User.add_to_class('last_seen',
-                  models.DateTimeField(default=datetime.datetime.now))
+                 models.fields.SmallIntegerField(choices=QUESTIONS_PER_PAGE_CHOICES, default=10))
+User.add_to_class('last_seen', models.DateTimeField(default=datetime.datetime.now))
 User.add_to_class('real_name', models.CharField(max_length=100, blank=True))
 User.add_to_class('website', models.URLField(max_length=200, blank=True))
 User.add_to_class('location', models.CharField(max_length=100, blank=True))
 User.add_to_class('date_of_birth', models.DateField(null=True, blank=True))
 User.add_to_class('about', models.TextField(blank=True))
-User.add_to_class('is_username_taken',classmethod(user_is_username_taken))
-User.add_to_class('get_q_sel_email_feed_frequency',user_get_q_sel_email_feed_frequency)
 
 # custom signal
 tags_updated = django.dispatch.Signal(providing_args=["question"])
@@ -745,6 +709,29 @@ def record_ask_event(instance, created, **kwargs):
     if created:
         activity = Activity(user=instance.author, active_at=instance.added_at, content_object=instance, activity_type=TYPE_ACTIVITY_ASK_QUESTION)
         activity.save()
+
+def update_question_dates(instance, created, **kwargs):
+    if created and instance.wiki:
+        added_at = datetime.datetime.now()
+        question.last_edited_by = instance.author
+        question.last_edited_at = added_at
+        question.wikified_at = added_at
+post_save.connect(update_question_dates, sender=Question)
+
+def create_revision(instance, created, **kwargs):
+    if created:
+        # create the first revision
+        QuestionRevision.objects.create(
+                                        question=instance,
+                                        revision=1,
+                                        title=instance.title,
+                                        author=instance.author,
+                                        revised_at=instance.last_activity_at,
+                                        tagnames=instance.tagnames,
+                                        summary=CONST['default_version'],
+                                        text=instance.html
+                                        )
+post_save.connect(create_revision, sender=Question)
 
 def record_answer_event(instance, created, **kwargs):
     if created:
@@ -877,7 +864,7 @@ def record_user_full_updated(instance, **kwargs):
 def post_stored_anonymous_content(sender,user,session_key,signal,*args,**kwargs):
     aq_list = AnonymousQuestion.objects.filter(session_key = session_key)
     aa_list = AnonymousAnswer.objects.filter(session_key = session_key)
-    import settings
+    
     if settings.EMAIL_VALIDATION == 'on':#add user to the record
         for aq in aq_list:
             aq.author = user

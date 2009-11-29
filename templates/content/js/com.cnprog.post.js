@@ -27,6 +27,7 @@ var lanai =
 var Vote = function(){
     // All actions are related to a question
     var questionId;
+    var questionSlug;
     // The object we operate on actually. It can be a question or an answer.
     var postId;
     var questionAuthorId;
@@ -52,6 +53,7 @@ var Vote = function(){
     
     var acceptAnonymousMessage = $.i18n._('insufficient privilege');
     var acceptOwnAnswerMessage = $.i18n._('cannot pick own answer as best');
+<<<<<<< HEAD:templates/content/js/com.cnprog.post.js
 
     var pleaseLogin = "<a href='" + scriptUrl + $.i18n._("account/") + $.i18n._("signin/")
                     + "?next=" + scriptUrl + $.i18n._("questions/") + "{{QuestionID}}'>"
@@ -63,14 +65,38 @@ var Vote = function(){
     var voteAnonymousMessage = $.i18n._('anonymous users cannot vote') + pleaseLogin;
     var upVoteRequiredScoreMessage = $.i18n._('>15 points requried to upvote') + pleaseSeeFAQ;
     var downVoteRequiredScoreMessage = $.i18n._('>100 points required to downvote') + pleaseSeeFAQ;
+=======
+    var favoriteAnonymousMessage = $.i18n._('anonymous users cannot select favorite questions') 
+					+ "<a href='/accounts/signin/?next=/questions/{{QuestionSlug}}'>"
+					+ $.i18n._('please login') + "</a>";
+    var voteAnonymousMessage = $.i18n._('anonymous users cannot vote') 
+					+ "<a href='/accounts/signin/?next=/questions/{{QuestionSlug}}'>"
+					+ $.i18n._('please login') + "</a>";
+    var upVoteRequiredScoreMessage = $.i18n._('>15 points required to upvote') 
+					+ $.i18n._('please see') + "<a href='/faq'>faq</a>";
+    var downVoteRequiredScoreMessage = $.i18n._('>100 points required to downvote')
+					+ $.i18n._('please see') + "<a href='/faq'>faq</a>";
+>>>>>>> arvid:src/cnprog/media/js/com.cnprog.post.js
     var voteOwnDeniedMessage = $.i18n._('cannot vote for own posts');
     var voteRequiredMoreVotes = $.i18n._('daily vote cap exhausted') + pleaseSeeFAQ;
     var voteDenyCancelMessage = $.i18n._('cannot revoke old vote') + pleaseSeeFAQ;
     var offensiveConfirmation = $.i18n._('please confirm offensive');
+<<<<<<< HEAD:templates/content/js/com.cnprog.post.js
     var offensiveAnonymousMessage = $.i18n._('anonymous users cannot flag offensive posts') + pleaseLogin;
     var offensiveTwiceMessage = $.i18n._('cannot flag message as offensive twice') + pleaseSeeFAQ;
     var offensiveNoFlagsLeftMessage = $.i18n._('flag offensive cap exhausted') + pleaseSeeFAQ;
     var offensiveNoPermissionMessage = $.i18n._('need >15 points to report spam') + pleaseSeeFAQ;
+=======
+    var offensiveAnonymousMessage = $.i18n._('anonymous users cannot flag offensive posts')
+					+ "<a href='/accounts/signin/?next=/questions/{{QuestionSlug}}'>"
+					+ $.i18n._('please login') + "</a>";
+    var offensiveTwiceMessage = $.i18n._('cannot flag message as offensive twice')
+					+ $.i18n._('please see') + "<a href='/faq'>faq</a>";
+    var offensiveNoFlagsLeftMessage = $.i18n._('flag offensive cap exhausted')
+					+ $.i18n._('please see') + "<a href='/faq'>faq</a>";
+    var offensiveNoPermissionMessage = $.i18n._('need >15 points to report spam')
+					+ $.i18n._('please see') + "<a href='/faq'>faq</a>";
+>>>>>>> arvid:src/cnprog/media/js/com.cnprog.post.js
     var removeConfirmation = $.i18n._('confirm delete');
     var removeAnonymousMessage = $.i18n._('anonymous users cannot delete/undelete');
     var recoveredMessage = $.i18n._('post recovered');
@@ -279,7 +305,7 @@ var Vote = function(){
 
     var callback_favorite = function(object, voteType, data){
         if(data.allowed == "0" && data.success == "0"){
-            showMessage(object, favoriteAnonymousMessage.replace("{{QuestionID}}", questionId));
+            showMessage(object, favoriteAnonymousMessage.replace("{{QuestionSlug}}", questionSlug));
         }
         else if(data.status == "1"){
             object.attr("src", scriptUrl + "content/images/vote-favorite-off.png");
@@ -302,7 +328,7 @@ var Vote = function(){
         
     var callback_vote = function(object, voteType, data){
         if(data.allowed == "0" && data.success == "0"){
-            showMessage(object, voteAnonymousMessage.replace("{{QuestionID}}", questionId));
+            showMessage(object, voteAnonymousMessage.replace("{{QuestionSlug}}", questionSlug));
         }
         else if (data.allowed == "-3"){
             showMessage(object, voteRequiredMoreVotes);
@@ -336,8 +362,13 @@ var Vote = function(){
         
     var callback_offensive = function(object, voteType, data){
         object = $(object);
+<<<<<<< HEAD:templates/content/js/com.cnprog.post.js
         if (data.allowed == "0" && data.success == "0"){
             showMessage(object, offensiveAnonymousMessage.replace("{{QuestionID}}", questionId));
+=======
+        if(data.allowed == "0" && data.success == "0"){
+            showMessage(object, offensiveAnonymousMessage.replace("{{QuestionSlug}}", questionSlug));
+>>>>>>> arvid:src/cnprog/media/js/com.cnprog.post.js
         }
         else if (data.allowed == "-3"){
             showMessage(object, offensiveNoFlagsLeftMessage);
@@ -354,8 +385,13 @@ var Vote = function(){
     };
         
     var callback_remove = function(object, voteType, data){
+<<<<<<< HEAD:templates/content/js/com.cnprog.post.js
         if (data.allowed == "0" && data.success == "0"){
             showMessage(object, removeAnonymousMessage.replace("{{QuestionID}}", questionId));
+=======
+        if(data.allowed == "0" && data.success == "0"){
+            showMessage(object, removeAnonymousMessage.replace("{{QuestionSlug}}", questionSlug));
+>>>>>>> arvid:src/cnprog/media/js/com.cnprog.post.js
         }
         else if (data.success == "1"){
             if (voteType == VoteType.removeQuestion){
@@ -377,8 +413,9 @@ var Vote = function(){
     };
         
     return {
-        init : function(qId, questionAuthor, userId){
-            questionId = qId;
+        init : function(id, slug, questionAuthor, userId){
+    	    questionId = id;
+    	    questionSlug = slug;
             questionAuthorId = questionAuthor;
             currentUserId = userId;
             bindEvents();
@@ -391,16 +428,26 @@ var Vote = function(){
         },
         
         favorite: function(object){
+<<<<<<< HEAD:templates/content/js/com.cnprog.post.js
             if (!currentUserId || currentUserId.toUpperCase() == "NONE"){
                 showMessage(object, favoriteAnonymousMessage.replace("{{QuestionID}}", questionId));
+=======
+            if(!currentUserId || currentUserId.toUpperCase() == "NONE"){
+                showMessage(object, favoriteAnonymousMessage.replace("{{QuestionSlug}}", questionSlug));
+>>>>>>> arvid:src/cnprog/media/js/com.cnprog.post.js
                 return false;
             }
             submit(object, VoteType.favorite, callback_favorite);
         },
             
         vote: function(object, voteType){
+<<<<<<< HEAD:templates/content/js/com.cnprog.post.js
             if (!currentUserId || currentUserId.toUpperCase() == "NONE"){
                 showMessage(object, voteAnonymousMessage.replace("{{QuestionID}}", questionId));
+=======
+            if(!currentUserId || currentUserId.toUpperCase() == "NONE"){
+                showMessage(object, voteAnonymousMessage.replace("{{QuestionSlug}}", questionSlug));
+>>>>>>> arvid:src/cnprog/media/js/com.cnprog.post.js
                 return false;   
             }
             if (voteType == VoteType.answerUpVote){
@@ -414,8 +461,13 @@ var Vote = function(){
         },
         
         offensive: function(object, voteType){
+<<<<<<< HEAD:templates/content/js/com.cnprog.post.js
             if (!currentUserId || currentUserId.toUpperCase() == "NONE"){
                 showMessage($(object), offensiveAnonymousMessage.replace("{{QuestionID}}", questionId));
+=======
+            if(!currentUserId || currentUserId.toUpperCase() == "NONE"){
+                showMessage($(object), offensiveAnonymousMessage.replace("{{QuestionSlug}}", questionSlug));
+>>>>>>> arvid:src/cnprog/media/js/com.cnprog.post.js
                 return false;   
             }
             if (confirm(offensiveConfirmation)){
@@ -425,8 +477,13 @@ var Vote = function(){
         },
             
         remove: function(object, voteType){
+<<<<<<< HEAD:templates/content/js/com.cnprog.post.js
             if (!currentUserId || currentUserId.toUpperCase() == "NONE"){
                 showMessage($(object), removeAnonymousMessage.replace("{{QuestionID}}", questionId));
+=======
+            if(!currentUserId || currentUserId.toUpperCase() == "NONE"){
+                showMessage($(object), removeAnonymousMessage.replace("{{QuestionSlug}}", questionSlug));
+>>>>>>> arvid:src/cnprog/media/js/com.cnprog.post.js
                 return false;   
             }
             bits = object.id.split('-');

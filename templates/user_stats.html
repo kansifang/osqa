@@ -30,6 +30,7 @@
         <div class="user-stats-table">
             {% for answered_question in answered_questions %}
             <div class="answer-summary">
+<<<<<<< HEAD:templates/user_stats.html
                 <a title="{{answered_question.summary|collapse}}" 
                     href="{% url question answered_question.id %}{{answered_question.title|slugify}}#{{answered_question.answer_id}}">
                     <span class="answer-votes {% if answered_question.accepted %}answered-accepted{% endif %}" 
@@ -50,6 +51,17 @@
                     {% endblocktrans %}
                     </span> 
                     {% endif %}
+=======
+                <a title="{{answered_question.summary}}" href="{% url question answered_question.slug %}">
+                    <div class="answer-votes {% if answered_question.accepted %}answered-accepted{% endif %}" 
+						title="{% blocktrans with answered_question.score as vote_count %}the answer has been voted for {{ vote_count }} times{% endblocktrans %}&#13;{% if answered_question.accepted %}{% trans "this answer has been selected as correct" %}{%endif%}">
+                        {{ answered_question.score }}
+                    </div>
+                </a>
+                <div class="answer-link">
+                    <a href="{% url question answered_question.slug %}">{{answered_question.title}}</a> {% if answered_question.comment_count %}<span 
+					title="{% blocktrans with answered_question.comment_count as count %}the answer has been commented {{count}} times{% endblocktrans %}">({{answered_question.comment_count}})</span>{% endif %}
+>>>>>>> arvid:src/cnprog/templates/user_stats.html
                 </div>
             </div>
             {% endfor %}
@@ -69,12 +81,20 @@
             <table>
                 <tr>
                     <td width="60">
+<<<<<<< HEAD:templates/user_stats.html
                         <img style="cursor: default;" src="{% href "/content/images/vote-arrow-up-on.png" %}" alt="{% trans "thumb up" %}" />
+=======
+                        <img style="cursor: default;" align="absmiddle" src="{{ MEDIA_URL }}cnprog/images/vote-arrow-up-on.png"/>
+>>>>>>> arvid:src/cnprog/templates/user_stats.html
                             <span title="{% trans "user has voted up this many times" %}" class="vote-count">{{up_votes}}</span>
 
                     </td>
                     <td width="60">
+<<<<<<< HEAD:templates/user_stats.html
                         <img style="cursor: default;" src="{% href "/content/images/vote-arrow-down-on.png" %}" alt="{% trans "thumb down" %}" />
+=======
+                        <img style="cursor: default;" align="absmiddle" src="{{ MEDIA_URL }}cnprog/images/vote-arrow-down-on.png"/>
+>>>>>>> arvid:src/cnprog/templates/user_stats.html
                             <span title="{% trans "user voted down this many times" %}" class="vote-count">{{down_votes}}</span>
 
                     </td>
@@ -97,9 +117,14 @@
                     <td width="180" valign="top">
                         {% for tag in user_tags%}
                         <a rel="tag" 
+<<<<<<< HEAD:templates/user_stats.html
 							title="{% blocktrans with tag.name as tag_name %}see other questions tagged '{{ tag_name }}' {% endblocktrans %}" 
 							href="{% url forum.views.tag tag|urlencode %}?user={{view_user.username}}">{{tag.name}}</a>
                         <span class="tag-number">&#215; {{ tag.user_tag_usage_count|intcomma }}</span><br/>
+=======
+							title="{% blocktrans %}see other questions tagged '{{ tag }}' {% endblocktrans %}" 
+							href="{% url tag_search tag|urlencode %}">{{tag.name}}</a><span class="tag-number"> × {{ tag.used_count|intcomma }}</span><br>
+>>>>>>> arvid:src/cnprog/templates/user_stats.html
                             {% if forloop.counter|divisibleby:"10" %}
                                 </td>
                                 <td width="180"  valign="top">

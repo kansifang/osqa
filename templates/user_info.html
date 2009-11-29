@@ -55,10 +55,10 @@
                 <tr>
                     <th colspan="2" align="left"><h3>{% trans "Registered user" %}</h3></th>
                 </tr>
-                {% if view_user.real_name %}
+                {% if view_user.get_profile.real_name %}
                 <tr>
                     <td>{% trans "real name" %}</td>
-                    <td><b>{{view_user.real_name}}</b></td>
+                    <td><b>{{view_user.get_profile.real_name}}</b></td>
                 </tr>
                 {% endif %}
                 <tr>
@@ -71,23 +71,23 @@
                     <td><strong title="{{ view_user.last_seen }}">{% diff_date view_user.last_seen %}</strong></td>
                 </tr>
                 {% endif %}
-                {% if view_user.website %}
+                {% if view_user.get_profile.website %}
                 <tr>
                     <td>{% trans "user website" %}</td>
-                    <td><a rel="nofollow" target="_blank" href="{{view_user.website}}">{{view_user.website}}</a></td>
+                    <td><a rel="nofollow" target="_blank" href="{{view_user.get_profile.website}}">{{view_user.get_profile.website}}</a></td>
                 </tr>
                 {% endif  %}
-                {% if view_user.location %}
+                {% if view_user.get_profile.location %}
                 <tr>
                     <td>{% trans "location" %}</td>
-                    <td>{{view_user.location}}</td>
+                    <td>{{view_user.get_profile.location}}</td>
                 </tr>
                 {% endif %}
-                {% if view_user.date_of_birth%}
+                {% if view_user.get_profile.date_of_birth%}
                 <tr>
 					<!--todo  - redo this with blocktrans -->
                     <td>{% trans "age" %}</td>
-                    <td>{% get_age view_user.date_of_birth %} {% trans "age unit" %}</td>
+                    <td>{% get_age view_user.get_profile.date_of_birth %} {% trans "age unit" %}</td>
                 </tr>
                 {% endif %}
 				<!--
@@ -102,8 +102,8 @@
         </td>
         <td width="380">
             <div class="user-about">
-            {% if view_user.about %}
-                {{view_user.about|safe|linebreaks}}
+            {% if view_user.get_profile.about %}
+                {{view_user.get_profile.about|safe|linebreaks}}
             {% endif %}
             </div>
         </td>

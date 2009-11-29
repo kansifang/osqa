@@ -98,7 +98,7 @@
                     <div class="favorites-empty"> </div>
                 {% endif %}
             <div id="question-summary-{{question.id}}" class="question-summary narrow">
-                <a style="text-decoration: none;" href="{% url questions %}{{question.id}}/{{question.get_question_title}}">
+                <a style="text-decoration: none;" href="{{ question.get_absolute_url }}">
                     <div class="stats">
                         <div class="votes">
                             <div class="vote-count-post">{{question.score|intcomma}}</div> 
@@ -118,17 +118,17 @@
                 </a>
                 <div class="bookQuestionItem">
                     <h3>
-                        <a title="{{question.summary|collapse}}" href="{% url questions %}{{question.id}}/{{question.title}}">{{question.title}}</a>
+                        <a title="{{question.summary|collapse}}" href="{% question.get_absolute_url %}">{{question.title}}</a>
                     </h3>
                     <div class="tags">
                         {% for tag in question.tagname_list %}
-                        <a href="{% url forum.views.tag tag|urlencode %}" title="{% "see questions tagged with" %}'{{ tag }}'{% trans "using tags" %}" rel="tag">{{ tag }}</a>
+                        <a href="{% url tag_search tag|urlencode %}" title="{% "see questions tagged with" %}'{{ tag }}'{% trans "using tags" %}" rel="tag">{{ tag }}</a>
                         {% endfor %}
                     </div>
                     <div class="started">
                         <span class="author"><a href="{{ question.last_activity_by.get_profile_url }}">{{ question.last_activity_by }}</a></span>
                         <span class="score">{% get_score_badge question.last_activity_by %} </span>
-                        <span class="date" title="{{ question.last_activity_at }}">{% diff_date question.last_activity_at %}</span>
+                        <span class="date" title="{{ question.last_activity_at }}">{{ question.last_activity_at|timesince }} {% trans 'ago' %}</span>
                     </div>
                 </div>
             </div>

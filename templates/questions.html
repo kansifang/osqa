@@ -71,19 +71,19 @@
         {% ifequal tab_id 'active'%}
         {% if question.wiki and settings.WIKI_ON %}
         <span class="from wiki">{% trans "community wiki" %}</span>
-        <span class="date" title="{{ question.added_at }}">{% diff_date question.added_at %}</span>
+        <span class="date" title="{{ question.added_at }}">{{ question.added_at|timesince }} {% trans 'ago' %}</span>
         {% else %}
         <div class="from">
             {% comment %}{% gravatar question.last_activity_by 24 %}{% endcomment %}
             <span class="author"><a href="{{ question.last_activity_by.get_profile_url }}">{{ question.last_activity_by }}</a></span>
             <span class="score">{% get_score_badge question.last_activity_by %} </span>
-            <span class="date" title="{{ question.last_activity_at }}">{% diff_date question.last_activity_at %}</span>
+            <span class="date" title="{{ question.last_activity_at }}">{{ question.last_activity_at|timesince }} {% trans 'ago' %}</span>
         </div>
         {% endif %}
         {% else %}
         {% if question.wiki and settings.WIKI_ON %}
         <span class="from wiki">{% trans "community wiki" %}</span>
-        <span class="date" title="{{ question.added_at }}">{% diff_date question.added_at %}</span>
+        <span class="date" title="{{ question.added_at }}">{{ question.added_at|timesince }} {% trans 'ago' %}</span>
         {% else %}
         <div class="from">
             {% comment %}{% gravatar question.author 24 %}{% endcomment %}
@@ -114,7 +114,7 @@
         
         <div class="tags">
         {% for tag in question.tagname_list %}
-        <a href="{% url forum.views.tag tag|urlencode %}" title="{% trans "see questions tagged" %}'{{ tag }}'{% trans "using tags" %}" rel="tag">{{ tag }}</a>
+        <a href="{% url tag_search tag|urlencode %}" title="{% trans "see questions tagged" %}'{{ tag }}'{% trans "using tags" %}" rel="tag">{{ tag }}</a>
         {% endfor %}
         </div>
     </div>
@@ -201,9 +201,15 @@
 	<h3 class="subtitle">{% trans "Related tags" %}</h3>
     <div class="tags">
         {% for tag in tags %}
+<<<<<<< HEAD:templates/questions.html
             <a rel="tag" title="{% trans "see questions tagged" %}'{{ tag.name }}'{% trans "using tags" %}"  href="{% url forum.views.tag tag.name|urlencode %}">{{ tag.name }}</a>
             <span class="tag-number">&#215; {{ tag.used_count|intcomma }}</span>
             <br />
+=======
+            <a rel="tag" title="{% trans "see questions tagged" %}'{{ tag.name }}'{% trans "using tags" %}"  href="{% url tag_search tag.name|urlencode %}">{{ tag.name }}</a>
+            <span class="tag-number">× {{ tag.used_count|intcomma }}</span>
+            <br>
+>>>>>>> arvid:src/cnprog/templates/questions.html
         {% endfor %}
         <br />
     </div>

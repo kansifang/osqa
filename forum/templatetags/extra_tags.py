@@ -13,6 +13,9 @@ from django.utils.translation import ugettext as _
 from django.utils.translation import ungettext
 from django.conf import settings
 
+from forum.const import *
+from forum.models import Question
+
 register = template.Library()
 
 GRAVATAR_TEMPLATE = ('<img class="gravatar" width="%(size)s" height="%(size)s" '
@@ -231,7 +234,8 @@ def format_number(value):
 
 @register.simple_tag
 def convert2tagname_list(question):
-    question['tagnames'] = [name for name in question['tagnames'].split(u' ')]
+    if not (hasattr(question, 'tagname_list') and callable(question.tagname_list)):
+        question['tagname_list'] = [name for name in question['tagnames'].split(u' ')] 
     return ''
 
 @register.simple_tag
