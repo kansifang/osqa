@@ -7,15 +7,9 @@ Style sheet for cnprog.com
 All rights reserved. 2008 CNPROG.COM
 */
 
-<<<<<<< HEAD:templates/content/style/default.css
-@import url(content/style/jquery.autocomplete.css);
-@import url(content/style/openid.css);
-@import url(content/style/prettify.css);
-=======
 @import url(jquery.autocomplete.css);
 @import url(openid.css);
 @import url(prettify.css);
->>>>>>> arvid:src/cnprog/media/style/default.css
 
 html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn, em, font, img, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, b, u, i, center, dl, dt, dd, ol, ul, li, form, label, table, caption, tbody, tfoot, thead, tr, th, td
 {
@@ -238,7 +232,6 @@ h4 {display:block;font-size:90%; font-family:Verdana;color:#ccc;}
 }
 
 #main-bar .golden{
-<<<<<<< HEAD:templates/content/style/default.css
     background:url(../../images/bg_title_golden.gif) no-repeat;
 }
 
@@ -252,21 +245,6 @@ h4 {display:block;font-size:90%; font-family:Verdana;color:#ccc;}
 
 #main-bar .green{
     background:url(../../images/bg_title_green.gif) no-repeat;
-=======
-    background:url(../images/bg_title_golden.gif) no-repeat;
-}
-
-#main-bar .pink{
-    background:url(../images/bg_title_red.gif) no-repeat;
-}
-
-#main-bar .orange{
-    background:url(../images/bg_title_orange.gif) no-repeat;
-}
-
-#main-bar .green{
-    background:url(../images/bg_title_green.gif) no-repeat;
->>>>>>> arvid:src/cnprog/media/style/default.css
 }
 
 #tab{
@@ -928,11 +906,7 @@ h4 {display:block;font-size:90%; font-family:Verdana;color:#ccc;}
 
 /* 2 textarea resizer styles */
 div.grippie {
-<<<<<<< HEAD:templates/content/style/default.css
     background:#EEEEEE url(../../images/grippie.png) no-repeat scroll center 2px;
-=======
-    background:#EEEEEE url(../images/grippie.png) no-repeat scroll center 2px;
->>>>>>> arvid:src/cnprog/media/style/default.css
     border-color:#DDDDDD;
     border-style:solid;
     border-width:0pt 1px 1px;
@@ -949,22 +923,14 @@ div.grippie {
 }
 
 .openid-input{
-<<<<<<< HEAD:templates/content/style/default.css
     background:url(../../images/openid.gif) no-repeat;
-=======
-    background:url(../images/openid.gif) no-repeat;
->>>>>>> arvid:src/cnprog/media/style/default.css
     padding-left:15px;
     cursor:pointer;
 }
 
 .openid-login-input{
     background-position:center left;
-<<<<<<< HEAD:templates/content/style/default.css
     background:url(../../images/openid.gif) no-repeat 0% 50%;
-=======
-    background:url(../images/openid.gif) no-repeat 0% 50%;
->>>>>>> arvid:src/cnprog/media/style/default.css
     padding:5px 5px 5px 15px;
     cursor:pointer;
     font-family:Trebuchet MS;

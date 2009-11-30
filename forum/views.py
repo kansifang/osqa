@@ -159,7 +159,6 @@ def questions(request, queryset=Question.objects.all(), template_name='questions
     view_dic = {"latest":"-added_at", "active":"-last_activity_at", "hottest":"-answer_count", "mostvoted":"-score" }
     view_id, orderby = _get_and_remember_questions_sort_method(request,view_dic,'latest')
 
-<<<<<<< HEAD:forum/views.py
     # check if request is from tagged questions
     if tagname is not None:
         objects = Question.objects.get_questions_by_tag(tagname, orderby)
@@ -180,10 +179,8 @@ def questions(request, queryset=Question.objects.all(), template_name='questions
             author_name = None
 
     # RISK - inner join queries
-    objects = objects.select_related(depth=1);
-=======
-    objects = queryset.select_related(depth=1).order_by(orderby)
->>>>>>> arvid:src/cnprog/apps/forum/views.py
+    objects = objects.select_related(depth=1).order_by(orderby)
+
     objects_list = Paginator(objects, pagesize)
     questions = objects_list.page(page)
 
@@ -192,45 +189,25 @@ def questions(request, queryset=Question.objects.all(), template_name='questions
         related_tags = Tag.objects.get_tags_by_questions(questions.object_list)
     else:
         related_tags = None
-<<<<<<< HEAD:forum/views.py
-    return render_to_response(template_file, {
-                              "questions": questions,
-                              "author_name": author_name,
-                              "tab_id": view_id,
-                              "questions_count": objects_list.count,
-                              "tags": related_tags,
-                              "searchtag": tagname,
-                              "is_unanswered": unanswered,
-                              "context": {
-                                  'is_paginated': True,
-                                  'pages': objects_list.num_pages,
-                                  'page': page,
-                                  'has_previous': questions.has_previous(),
-                                  'has_next': questions.has_next(),
-                                  'previous': questions.previous_page_number(),
-                                  'next': questions.next_page_number(),
-                                  'base_url': request.path + '?sort=%s&' % view_id,
-                                  'pagesize': pagesize
-                              }}, context_instance=RequestContext(request))
-=======
-    
     extra = {
-        "questions": questions,
-        "tab_id": view_id,
-        "questions_count": objects_list.count,
-        "tags": related_tags,
-        "context": {
-            'is_paginated': True,
-            'pages': objects_list.num_pages,
-            'page': page,
-            'has_previous': questions.has_previous(),
-            'has_next': questions.has_next(),
-            'previous': questions.previous_page_number(),
-            'next': questions.next_page_number(),
-            'base_url': request.path + '?sort=%s&' % view_id,
-            'pagesize': pagesize
-        }
-    }
+              "questions": questions,
+              "author_name": author_name,
+              "tab_id": view_id,
+              "questions_count": objects_list.count,
+              "tags": related_tags,
+              "searchtag": tagname,
+              "is_unanswered": unanswered,
+              "context": {
+                  'is_paginated': True,
+                  'pages': objects_list.num_pages,
+                  'page': page,
+                  'has_previous': questions.has_previous(),
+                  'has_next': questions.has_next(),
+                  'previous': questions.previous_page_number(),
+                  'next': questions.next_page_number(),
+                  'base_url': request.path + '?sort=%s&' % view_id,
+                  'pagesize': pagesize
+           }
     
     if extra_context is not None:
         extra.update(extra_context)
@@ -240,8 +217,6 @@ def questions(request, queryset=Question.objects.all(), template_name='questions
 def tagged_search(request, tag, queryset=Question.objects.all(), template_name='questions.html'):
     queryset = queryset.filter(Q(tags__name__icontains=unquote(tag)))
     return questions(request, queryset, template_name, extra_context={'searchtag':tag})
-
->>>>>>> arvid:src/cnprog/apps/forum/views.py
 
 def create_new_answer(question=None, author=None, \
                       added_at=None, wiki=False, \
@@ -282,24 +257,12 @@ def create_new_answer(question=None, author=None, \
 
     #set notification/delete
     if email_notify:
-<<<<<<< HEAD:forum/views.py
         if author not in question.followed_by.all():
             question.followed_by.add(author)
     else:
         #not sure if this is necessary. ajax should take care of this...
         try:
             question.followed_by.remove(author)
-=======
-        try:
-            EmailFeed.objects.get(feed_id=question.id, subscriber_id=author.id, feed_content_type=question_type)
-        except EmailFeed.DoesNotExist:
-            feed = EmailFeed.objects.create(content=question, subscriber=author)
-    else:
-        #not sure if this is necessary. ajax should take care of this...
-        try:
-            feed = EmailFeed.objects.get(feed_id=question.id, subscriber_id=author.id, feed_content_type=question_type)
-            feed.delete()
->>>>>>> arvid:src/cnprog/apps/forum/views.py
         except:
             pass
 
@@ -309,8 +272,6 @@ def ask(request, form_class=AskForm):
     if request.method == "POST":
         form = form_class(request.POST)
         if form.is_valid():
-<<<<<<< HEAD:forum/views.py
-
             added_at = datetime.datetime.now()
             title = strip_tags(form.cleaned_data['title']).strip()
             wiki = form.cleaned_data['wiki']
@@ -332,6 +293,7 @@ def ask(request, form_class=AskForm):
                                                text=text
                                                )
 
+                #question = form.save(request)
                 return HttpResponseRedirect(question.get_absolute_url())
             else:
                 request.session.flush()
@@ -348,10 +310,6 @@ def ask(request, form_class=AskForm):
                                              )
                 question.save()
                 return HttpResponseRedirect(reverse('user_signin_new_question'))
-=======
-            question = form.save(request)
-            return HttpResponseRedirect(question.get_absolute_url())
->>>>>>> arvid:src/cnprog/apps/forum/views.py
     else:
         form = form_class()
 
@@ -373,7 +331,6 @@ def question(request, slug, queryset=Question.objects.all(), template_name='ques
     try:
         orderby = view_dic[view_id]
     except KeyError:
-<<<<<<< HEAD:forum/views.py
         qsm = request.session.get('questions_sort_method',None)
         if qsm in ('mostvoted','latest'):
             logging.debug('loaded from session ' + qsm)
@@ -389,19 +346,12 @@ def question(request, slug, queryset=Question.objects.all(), template_name='ques
 
     logging.debug('view_id=' + str(view_id))
 
-    question = get_object_or_404(Question, id=id)
-=======
-        view_id = "votes"
-        orderby = "-score"
-    
-    question = get_object_or_404(queryset, slug=slug)
->>>>>>> arvid:src/cnprog/apps/forum/views.py
+    question = get_object_or_404(queryset, id=id)
     if question.deleted and not can_view_deleted_post(request.user, question):
         raise Http404
     answer_form = AnswerForm(question, request.user)
     answers = Answer.objects.get_answers_from_question(question, request.user, orderby)
     answers = answers.select_related(depth=1)
-<<<<<<< HEAD:forum/views.py
 
     favorited = question.has_favorite_by_user(request.user)
     if request.user.is_authenticated():
@@ -410,19 +360,6 @@ def question(request, slug, queryset=Question.objects.all(), template_name='ques
         question_vote = None #is this correct?
     if question_vote is not None and question_vote.count() > 0:
         question_vote = question_vote[0]
-=======
-    
-    context = {}
-    
-    if request.user.is_authenticated():
-        favorited = question.has_favorite_by_user(request.user)
-        question_vote = question.votes.filter(user=request.user)
-        if question_vote is not None and question_vote.count() > 0:
-            question_vote = question_vote[0]
-            
-        context["question_vote"] = question_vote
-        context["favorited"] = favorited
->>>>>>> arvid:src/cnprog/apps/forum/views.py
 
     user_answer_votes = {}
     for vote in question.get_user_votes_in_answers(request.user):
@@ -446,7 +383,6 @@ def question(request, slug, queryset=Question.objects.all(), template_name='ques
 
     objects_list = Paginator(filtered_answers, ANSWERS_PAGE_SIZE)
     page_objects = objects_list.page(page)
-<<<<<<< HEAD:forum/views.py
 
     #todo: merge view counts per user and per session
     #1) view count per session
@@ -502,44 +438,6 @@ def question(request, slug, queryset=Question.objects.all(), template_name='ques
                               'extend_url': "#sort-top"
                               }
                               }, context_instance=RequestContext(request))
-=======
-    # update view count
-    Question.objects.update_view_count(question)
-    
-    #similar questions
-    similar_questions = list(queryset.filter(tagnames = question.tagnames))
-
-    tags_list = question.tags.all()
-    for tag in tags_list:
-        extend_questions = queryset.filter(tags__id = tag.id)[:50]
-        for item in extend_questions:
-            if item not in similar_questions and len(similar_questions) < 10:
-                similar_questions.append(item)
-    context.update({
-          "question": question,
-          "question_comment_count":question.comments.count(),
-          "answer": answer_form,
-          "answers": page_objects.object_list,
-          "user_answer_votes": user_answer_votes,
-          "tags": question.tags.all(),
-          "tab_id": view_id,
-          "similar_questions": similar_questions,
-          "context": {
-              'is_paginated': True,
-              'pages': objects_list.num_pages,
-              'page': page,
-              'has_previous': page_objects.has_previous(),
-              'has_next': page_objects.has_next(),
-              'previous': page_objects.previous_page_number(),
-              'next': page_objects.next_page_number(),
-              'base_url': request.path + '?sort=%s&' % view_id,
-              'extend_url': "#sort-top"
-          }
-    })
-    
-    return render_to_response(template_name, context,
-                              context_instance=RequestContext(request))
->>>>>>> arvid:src/cnprog/apps/forum/views.py
 
 @login_required
 def close(request, id):
@@ -873,9 +771,8 @@ def tags(request, queryset=Tag.objects.filter(deleted=False).exclude(used_count=
         tags = objects_list.page(page)
     except (EmptyPage, InvalidPage):
         tags = objects_list.page(objects_list.num_pages)
-<<<<<<< HEAD:forum/views.py
 
-    return render_to_response('tags.html', {
+    return render_to_response(template_name, {
                                             "tags" : tags,
                                             "stag" : stag,
                                             "tab_id" : sortby,
@@ -891,26 +788,6 @@ def tags(request, queryset=Tag.objects.filter(deleted=False).exclude(used_count=
                                                 'base_url' : reverse('tags') + '?sort=%s&' % sortby
                                             }
         }, context_instance=RequestContext(request))
-=======
-    
-    return render_to_response(template_name, {
-                              "tags": tags,
-                              "stag": stag,
-                              "tab_id": sortby,
-                              "keywords": stag,
-                              "context": {
-                              'is_paginated': is_paginated,
-                              'pages': objects_list.num_pages,
-                              'page': page,
-                              'has_previous': tags.has_previous(),
-                              'has_next': tags.has_next(),
-                              'previous': tags.previous_page_number(),
-                              'next': tags.next_page_number(),
-                              'base_url': '/tags/?sort=%s&' % sortby
-                              }
-
-                              }, context_instance=RequestContext(request))
->>>>>>> arvid:src/cnprog/apps/forum/views.py
 
 def vote(request, id):
     """
@@ -1106,7 +983,6 @@ def vote(request, id):
             elif vote_type == '11':#subscribe q updates
                 user = request.user
                 if user.is_authenticated():
-<<<<<<< HEAD:forum/views.py
                     if user not in question.followed_by.all():
                         question.followed_by.add(user)
                         if settings.EMAIL_VALIDATION == 'on' and user.email_isvalid == False:
@@ -1120,15 +996,6 @@ def vote(request, id):
                         if 'message' in response_data:
                             response_data['message'] += '<br/>'
                         response_data['message'] = _('email update frequency has been set to daily')
-=======
-                    try:
-                        EmailFeed.objects.get(feed_id=question.id, subscriber_id=user.id, feed_content_type=question_type)
-                    except EmailFeed.DoesNotExist:
-                        feed = EmailFeed(subscriber=user, content=question)
-                        feed.save()
-                        #if settings.EMAIL_VALIDATION == 'on' and user.email_isvalid == False:
-                        #    response_data['message'] = _('subscription saved, %(email)s needs validation') % {'email':user.email}
->>>>>>> arvid:src/cnprog/apps/forum/views.py
                     #response_data['status'] = 1
                     #responst_data['allowed'] = 1
                 else:
@@ -1169,24 +1036,12 @@ def users(request, queryset=User.objects.all(), template_name='users.html'):
             sorted_by = 'username'
         # default
         else:
-<<<<<<< HEAD:forum/views.py
             objects_list = Paginator(User.objects.all().order_by('-reputation'), USERS_PAGE_SIZE)
         base_url = reverse('users') + '?sort=%s&' % sortby
     else:
         sortby = "reputation"
         objects_list = Paginator(User.objects.extra(where=['username like %s'], params=['%' + suser + '%']).order_by('-reputation'), USERS_PAGE_SIZE)
         base_url = reverse('users') + '?name=%s&sort=%s&' % (suser, sortby)
-=======
-            sorted_by = '-reputation'
-        objects_list = Paginator(queryset.order_by(sorted_by), USERS_PAGE_SIZE)
-        
-        base_url = '/users/?sort=%s&' % sortby
-    else:
-        sortby = "reputation"
-        objects_list = Paginator(queryset.filter(Q(username__icontains=suser)).order_by('-reputation'), 
-                                 USERS_PAGE_SIZE)
-        base_url = '/users/?name=%s&sort=%s&' % (suser, sortby)
->>>>>>> arvid:src/cnprog/apps/forum/views.py
 
     try:
         users = objects_list.page(page)
@@ -1218,7 +1073,6 @@ def user(request, id):
     func = getattr(views, user_view.view_name)
     return func(request, id, user_view)
 
-<<<<<<< HEAD:forum/views.py
 @login_required
 def moderate_user(request, id):
     """ajax handler of user moderation
@@ -1274,8 +1128,6 @@ def edit_user(request, id):
                                                 'gravatar_faq_url' : reverse('faq') + '#gravatar',
                                     }, context_instance=RequestContext(request))
 
-=======
->>>>>>> arvid:src/cnprog/apps/forum/views.py
 def user_stats(request, user_id, user_view):
     user = get_object_or_404(User, id=user_id)
     questions = Question.objects.filter(deleted__exact=False, author=user)\
@@ -1283,31 +1135,6 @@ def user_stats(request, user_id, user_view):
                                 .order_by('-score', '-last_activity_at')[:100]
         
     answered_questions = Question.objects.extra(
-<<<<<<< HEAD:forum/views.py
-        select={
-            'vote_up_count' : 'answer.vote_up_count',
-            'vote_down_count' : 'answer.vote_down_count',
-            'answer_id' : 'answer.id',
-            'accepted' : 'answer.accepted',
-            'vote_count' : 'answer.score',
-            'comment_count' : 'answer.comment_count'
-            },
-        tables=['question', 'answer'],
-        where=['answer.deleted=0 AND question.deleted=0 AND answer.author_id=%s AND answer.question_id=question.id'],
-        params=[user_id],
-        order_by=['-vote_count', '-answer_id'],
-        select_params=[user_id]
-    ).distinct().values('comment_count',
-                        'id',
-                        'answer_id',
-                        'title',
-                        'author_id',
-                        'accepted',
-                        'vote_count',
-                        'answer_count',
-                        'vote_up_count',
-                        'vote_down_count')[:100]
-=======
                                                 select={
                                                 'vote_up_count': 'answer.vote_up_count',
                                                 'vote_down_count': 'answer.vote_down_count',
@@ -1322,7 +1149,6 @@ def user_stats(request, user_id, user_view):
                                                 order_by=['-vote_count', '-answer_id'],
                                                 select_params=[user_id]
                                                 ).distinct()[:100]
->>>>>>> arvid:src/cnprog/apps/forum/views.py
 
     up_votes = Vote.objects.get_up_vote_count_from_user(user)
     down_votes = Vote.objects.get_down_vote_count_from_user(user)
@@ -1409,15 +1235,10 @@ def user_recent(request, user_id, user_view):
             self.type_id = type
             self.title = title
             self.summary = summary
-<<<<<<< HEAD:forum/views.py
             slug_title = slugify(title)
             self.title_link = reverse('question', kwargs={'id':question_id}) + u'%s' % slug_title
             if int(answer_id) > 0:
                 self.title_link += '#%s' % answer_id
-=======
-            self.title_link = u'/questions/%s/#%s' % (question_slug, answer_id)\
-                if int(answer_id) > 0 else u'/questions/%s/' % (question_slug)
->>>>>>> arvid:src/cnprog/apps/forum/views.py
     class AwardEvent:
         def __init__(self, time, type, id):
             self.time = time
@@ -1427,56 +1248,7 @@ def user_recent(request, user_id, user_view):
 
     activities = []
     # ask questions
-<<<<<<< HEAD:forum/views.py
-    questions = Activity.objects.extra(
-        select={
-            'title' : 'question.title',
-            'question_id' : 'question.id',
-            'active_at' : 'activity.active_at',
-            'activity_type' : 'activity.activity_type'
-            },
-        tables=['activity', 'question'],
-        where=['activity.content_type_id = %s AND activity.object_id = ' +
-            'question.id AND question.deleted=0 AND activity.user_id = %s AND activity.activity_type = %s'],
-        params=[question_type_id, user_id, TYPE_ACTIVITY_ASK_QUESTION],
-        order_by=['-activity.active_at']
-    ).values(
-            'title',
-            'question_id',
-            'active_at',
-            'activity_type'
-            )
-    if len(questions) > 0:
-        questions = [(Event(q['active_at'], q['activity_type'], q['title'], '', '0', \
-                      q['question_id'])) for q in questions]
-        activities.extend(questions)
-
-    # answers
-    answers = Activity.objects.extra(
-        select={
-            'title' : 'question.title',
-            'question_id' : 'question.id',
-            'answer_id' : 'answer.id',
-            'active_at' : 'activity.active_at',
-            'activity_type' : 'activity.activity_type'
-            },
-        tables=['activity', 'answer', 'question'],
-        where=['activity.content_type_id = %s AND activity.object_id = answer.id AND ' + 
-            'answer.question_id=question.id AND answer.deleted=0 AND activity.user_id=%s AND '+ 
-            'activity.activity_type=%s AND question.deleted=0'],
-        params=[answer_type_id, user_id, TYPE_ACTIVITY_ANSWER],
-        order_by=['-activity.active_at']
-    ).values(
-            'title',
-            'question_id',
-            'answer_id',
-            'active_at',
-            'activity_type'
-            )
-    if len(answers) > 0:
-        answers = [(Event(q['active_at'], q['activity_type'], q['title'], '', q['answer_id'], \
-                    q['question_id'])) for q in answers]
-=======
+    #todo filter deleted questions
     question_activity = Activity.objects.filter(content_type__id=question_type_id, user__id=user_id, 
                                                 activity_type=TYPE_ACTIVITY_ASK_QUESTION )\
                                          .order_by('-active_at')
@@ -1487,6 +1259,7 @@ def user_recent(request, user_id, user_view):
         activities.extend(questions)
 
     # answers
+    # todo filter deleted answers and deleted questions
     answer_activity = Activity.objects.filter(content_type__id=answer_type_id, user__id=user_id, 
                                                 activity_type=TYPE_ACTIVITY_ANSWER )\
                                          .order_by('-active_at')
@@ -1494,12 +1267,10 @@ def user_recent(request, user_id, user_view):
     if len(answer_activity) > 0:
         answers = [(Event(qa.active_at, qa.activity_type, qa.content_object.question.title, '', qa.object_id, \
                     qa.content_object.question.slug)) for qa in answer_activity]
->>>>>>> arvid:src/cnprog/apps/forum/views.py
         activities.extend(answers)
 
     # question comments
     comments = Activity.objects.extra(
-<<<<<<< HEAD:forum/views.py
         select={
             'title' : 'question.title',
             'question_id' : 'comment.object_id',
@@ -1520,27 +1291,6 @@ def user_recent(request, user_id, user_view):
             'added_at',
             'activity_type'
             )
-=======
-                                      select={
-                                      'title': 'question.title',
-                                      'question_slug': 'question.slug',
-                                      'added_at': 'comment.added_at',
-                                      'activity_type': 'activity.activity_type'
-                                      },
-                                      tables=['activity', 'question', 'comment'],
-
-                                      where=['activity.content_type_id = %s AND activity.object_id = comment.id AND ' +
-                                      'activity.user_id = comment.user_id AND comment.object_id=question.id AND ' +
-                                      'comment.content_type_id=%s AND activity.user_id = %s AND activity.activity_type=%s'],
-                                      params=[comment_type_id, question_type_id, user_id, TYPE_ACTIVITY_COMMENT_QUESTION],
-                                      order_by=['-comment.added_at']
-                                      ).values(
-        'title',
-        'question_slug',
-        'added_at',
-        'activity_type'
-        )
->>>>>>> arvid:src/cnprog/apps/forum/views.py
 
     if len(comments) > 0:
         comments = [(Event(q['added_at'], q['activity_type'], q['title'], '', '0', \
@@ -1549,7 +1299,6 @@ def user_recent(request, user_id, user_view):
 
     # answer comments
     comments = Activity.objects.extra(
-<<<<<<< HEAD:forum/views.py
         select={
             'title' : 'question.title',
             'question_id' : 'question.id',
@@ -1573,30 +1322,6 @@ def user_recent(request, user_id, user_view):
             'added_at',
             'activity_type'
             )
-=======
-                                      select={
-                                      'title': 'question.title',
-                                      'question_slug': 'question.slug',
-                                      'answer_id': 'answer.id',
-                                      'added_at': 'comment.added_at',
-                                      'activity_type': 'activity.activity_type'
-                                      },
-                                      tables=['activity', 'question', 'answer', 'comment'],
-
-                                      where=['activity.content_type_id = %s AND activity.object_id = comment.id AND ' +
-                                      'activity.user_id = comment.user_id AND comment.object_id=answer.id AND ' +
-                                      'comment.content_type_id=%s AND question.id = answer.question_id AND ' +
-                                      'activity.user_id = %s AND activity.activity_type=%s'],
-                                      params=[comment_type_id, answer_type_id, user_id, TYPE_ACTIVITY_COMMENT_ANSWER],
-                                      order_by=['-comment.added_at']
-                                      ).values(
-        'title',
-        'question_slug',
-        'answer_id',
-        'added_at',
-        'activity_type'
-        )
->>>>>>> arvid:src/cnprog/apps/forum/views.py
 
     if len(comments) > 0:
         comments = [(Event(q['added_at'], q['activity_type'], q['title'], '', q['answer_id'], \
@@ -1604,36 +1329,11 @@ def user_recent(request, user_id, user_view):
         activities.extend(comments)
 
     # question revisions
-<<<<<<< HEAD:forum/views.py
-    revisions = Activity.objects.extra(
-        select={
-            'title' : 'question_revision.title',
-            'question_id' : 'question_revision.question_id',
-            'added_at' : 'activity.active_at',
-            'activity_type' : 'activity.activity_type',
-            'summary' : 'question_revision.summary'
-            },
-        tables=['activity', 'question_revision', 'question'],
-        where=['activity.content_type_id = %s AND activity.object_id = question_revision.id AND '+
-            'question_revision.id=question.id AND question.deleted=0 AND '+
-            'activity.user_id = question_revision.author_id AND activity.user_id = %s AND '+
-            'activity.activity_type=%s'],
-        params=[question_revision_type_id, user_id, TYPE_ACTIVITY_UPDATE_QUESTION],
-        order_by=['-activity.active_at']
-    ).values(
-            'title',
-            'question_id',
-            'added_at',
-            'activity_type',
-            'summary'
-            )
-
-=======
+    #todo filter out deleted questions
     revisions = Activity.objects.filter(content_type__id=question_revision_type_id, user__id=user_id, 
                                                 activity_type=TYPE_ACTIVITY_UPDATE_QUESTION )\
                                          .order_by('-active_at')
     
->>>>>>> arvid:src/cnprog/apps/forum/views.py
     if len(revisions) > 0:
         revisions = [(Event(qa.active_at, qa.activity_type, qa.content_object.title, 
                             qa.content_object.summary, '0', qa.content_object.question.slug)) 
@@ -1642,7 +1342,6 @@ def user_recent(request, user_id, user_view):
 
     # answer revisions
     revisions = Activity.objects.extra(
-<<<<<<< HEAD:forum/views.py
         select={
             'title' : 'question.title',
             'question_id' : 'question.id',
@@ -1668,32 +1367,6 @@ def user_recent(request, user_id, user_view):
             'activity_type',
             'summary'
             )
-=======
-                                       select={
-                                       'title': 'question.title',
-                                       'question_slug': 'question.slug',
-                                       'answer_id': 'answer.id',
-                                       'added_at': 'activity.active_at',
-                                       'activity_type': 'activity.activity_type',
-                                       'summary': 'answer_revision.summary'
-                                       },
-                                       tables=['activity', 'answer_revision', 'question', 'answer'],
-
-                                       where=['activity.content_type_id = %s AND activity.object_id = answer_revision.id AND ' +
-                                       'activity.user_id = answer_revision.author_id AND activity.user_id = %s AND ' +
-                                       'answer_revision.answer_id=answer.id AND answer.question_id = question.id AND ' +
-                                       'activity.activity_type=%s'],
-                                       params=[answer_revision_type_id, user_id, TYPE_ACTIVITY_UPDATE_ANSWER],
-                                       order_by=['-activity.active_at']
-                                       ).values(
-        'title',
-        'question_slug',
-        'added_at',
-        'answer_id',
-        'activity_type',
-        'summary'
-        )
->>>>>>> arvid:src/cnprog/apps/forum/views.py
 
     if len(revisions) > 0:
         revisions = [(Event(q['added_at'], q['activity_type'], q['title'], q['summary'], \
@@ -1702,7 +1375,6 @@ def user_recent(request, user_id, user_view):
 
     # accepted answers
     accept_answers = Activity.objects.extra(
-<<<<<<< HEAD:forum/views.py
         select={
             'title' : 'question.title',
             'question_id' : 'question.id',
@@ -1723,26 +1395,6 @@ def user_recent(request, user_id, user_view):
             'activity_type',
             )
 
-=======
-                                            select={
-                                            'title': 'question.title',
-                                            'question_slug': 'question.slug',
-                                            'added_at': 'activity.active_at',
-                                            'activity_type': 'activity.activity_type',
-                                            },
-                                            tables=['activity', 'answer', 'question'],
-                                            where=['activity.content_type_id = %s AND activity.object_id = answer.id AND ' +
-                                            'activity.user_id = question.author_id AND activity.user_id = %s AND ' +
-                                            'answer.question_id=question.id AND activity.activity_type=%s'],
-                                            params=[answer_type_id, user_id, TYPE_ACTIVITY_MARK_ANSWER],
-                                            order_by=['-activity.active_at']
-                                            ).values(
-        'title',
-        'question_slug',
-        'added_at',
-        'activity_type',
-        )
->>>>>>> arvid:src/cnprog/apps/forum/views.py
     if len(accept_answers) > 0:
         accept_answers = [(Event(q['added_at'], q['activity_type'], q['title'], '', '0', \
                            q['question_slug'])) for q in accept_answers]
@@ -1786,11 +1438,7 @@ def user_responses(request, user_id, user_view):
         def __init__(self, type, title, question_slug, answer_id, time, username, user_id, content):
             self.type = type
             self.title = title
-<<<<<<< HEAD:forum/views.py
             self.titlelink = reverse('question', args=[question_id]) + u'%s#%s' % (slugify(title), answer_id)
-=======
-            self.titlelink = u'/questions/%s/#%s' % (question_slug, answer_id)
->>>>>>> arvid:src/cnprog/apps/forum/views.py
             self.time = time
             self.userlink = reverse('users') + u'%s/%s/' % (user_id, username)
             self.username = username
@@ -2193,18 +1841,11 @@ def badges(request, queryset=Badge.objects.all(), template_name='badges.html'):
     if request.user.is_authenticated():
         my_badges = queryset.filter(awards__user=request.user)
 
-<<<<<<< HEAD:forum/views.py
     return render_to_response('badges.html', {
         'badges' : badges,
         'mybadges' : my_badges,
         'feedback_faq_url' : reverse('feedback'),
     }, context_instance=RequestContext(request))
-=======
-    return render_to_response(template_name, {
-                              'badges': badges,
-                              'mybadges': my_badges,
-                              }, context_instance=RequestContext(request))
->>>>>>> arvid:src/cnprog/apps/forum/views.py
 
 def badge(request, id, badge_queryset=Badge.objects.all(), 
           award_queryset=Award.objects.all(), template_name='badge.html'):
@@ -2424,20 +2065,16 @@ def search(request, queryset=Question.objects.all(), template_name = "questions.
                 view_id = "latest"
                 orderby = "-added_at"
                 
-<<<<<<< HEAD:forum/views.py
             if settings.USE_SPHINX_SEARCH == True:
                 #search index is now free of delete questions and answers
                 #so there is not "antideleted" filtering here
                 objects = Question.search.query(keywords)
                 #no related selection either because we're relying on full text search here
             else:
-                objects = Question.objects.filter(deleted=False).extra(where=['title like %s'], params=['%' + keywords + '%']).order_by(orderby)
+                #todo make sure deleted are taken out
+                objects =  queryset.filter(Q(title__icontains=keywords) | Q(html__icontains=keywords)).order_by(orderby)
                 # RISK - inner join queries
                 objects = objects.select_related();
-=======
-            objects =  queryset.filter(Q(title__icontains=keywords) | Q(html__icontains=keywords)).order_by(orderby)
-            #  queryset.extra(where=['title like %s'], params=['%' + keywords + '%'])
->>>>>>> arvid:src/cnprog/apps/forum/views.py
 
             objects_list = Paginator(objects, pagesize)
             questions = objects_list.page(page)

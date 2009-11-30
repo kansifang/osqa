@@ -201,15 +201,9 @@
 	<h3 class="subtitle">{% trans "Related tags" %}</h3>
     <div class="tags">
         {% for tag in tags %}
-<<<<<<< HEAD:templates/questions.html
-            <a rel="tag" title="{% trans "see questions tagged" %}'{{ tag.name }}'{% trans "using tags" %}"  href="{% url forum.views.tag tag.name|urlencode %}">{{ tag.name }}</a>
+            <a rel="tag" title="{% trans "see questions tagged" %}'{{ tag.name }}'{% trans "using tags" %}"  href="{% url tag_search tag.name|urlencode %}">{{ tag.name }}</a>
             <span class="tag-number">&#215; {{ tag.used_count|intcomma }}</span>
             <br />
-=======
-            <a rel="tag" title="{% trans "see questions tagged" %}'{{ tag.name }}'{% trans "using tags" %}"  href="{% url tag_search tag.name|urlencode %}">{{ tag.name }}</a>
-            <span class="tag-number">× {{ tag.used_count|intcomma }}</span>
-            <br>
->>>>>>> arvid:src/cnprog/templates/questions.html
         {% endfor %}
         <br />
     </div>

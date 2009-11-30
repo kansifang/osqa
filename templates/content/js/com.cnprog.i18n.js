@@ -57,10 +57,7 @@ var i18nZh = {
 };
 
 var i18nEn = {
-<<<<<<< HEAD:templates/content/js/com.cnprog.i18n.js
 	'need >15 points to report spam':'need >15 points to report spam ',
-=======
->>>>>>> arvid:src/cnprog/media/js/com.cnprog.i18n.js
     '>15 points requried to upvote':'>15 points required to upvote ',
 	'tags cannot be empty':'please enter at least one tag',
 	'anonymous users cannot vote':'sorry, anonymous users cannot vote ',

@@ -25,18 +25,10 @@
             <div class="favorites-empty"> </div>
         {% endif %}
     <div id="question-summary-{{question.id}}" class="question-summary narrow">
-<<<<<<< HEAD:templates/users_questions.html
-        <a style="text-decoration: none;" href="{% url question id=question.id %}{{question.title|slugify}}">
-            <div class="stats">
-                <div class="votes">
-                    <span class="vote-count-post">{{question.vote_count|intcomma}}</span>
-=======
-    <h1>{{ question.items }}</h1>
         <a style="text-decoration: none;" href="{{ question.get_absolute_url }}">
             <div class="stats">
                 <div class="votes">
-                    <div class="vote-count-post">{{question.score|intcomma}}</div> 
->>>>>>> arvid:src/cnprog/templates/users_questions.html
+                    <span class="vote-count-post">{{question.score|intcomma}}</span> 
                     {% trans "votes" %}
                 </div >
                 <div title="{% if question.answer_accepted %}{% trans "this answer has been accepted to be correct" %}{% endif %}" class="status {% if question.answer_accepted %}answered-accepted{% endif %} {% ifequal question.answer_count 0 %}unanswered{% endifequal %}{% ifnotequal question.answer_count 0 %}answered{% endifnotequal %}">
@@ -50,15 +42,9 @@
             </div>
         </a>
         <div class="summary">
-<<<<<<< HEAD:templates/users_questions.html
-            <div class="question-title">
-                <a title="{{question.summary}}" href="{% url question id=question.id %}{{question.title|slugify}}">{{question.title}}</a>
-            </div>
-=======
-            <h3>
+            <div class="question-title">>
                 <a title="{{question.summary}}" href="{{ question.get_absolute_url }}">{{question.title}}</a>
-            </h3>
->>>>>>> arvid:src/cnprog/templates/users_questions.html
+            </div>
             <div class="tags">
                 {% convert2tagname_list question %}
                 {% for tag in question.tagname_list %}
@@ -67,15 +53,9 @@
                 {% endfor %}
             </div>
             <div class="started">
-<<<<<<< HEAD:templates/users_questions.html
                 <span class="relativetime" title="{{question.last_activity_at}}">{% diff_date question.last_activity_at %}</span>
-                {% if question.la_username %}
-                    <a href="{% url users %}{{question.la_user_id}}/{{question.la_username}}">{{question.la_username}}</a> {% get_score_badge_by_details question.la_user_reputation question.la_user_gold question.la_user_silver question.la_user_bronze%}
-=======
-                <span class="relativetime" title="{{question.last_activity_at}}">{{ question.last_activity_at|timesince }} {% trans 'ago' %}</span>
                 {% if question.last_activity_by %}
                     <a href="{% url user question.last_activity_by.id %}">{{question.last_activity_by}}</a> {% get_score_badge_by_details question.last_activity_by.reputation question.last_activity_by.gold question.last_activity_by.silver question.last_activity_by.bronze%}
->>>>>>> arvid:src/cnprog/templates/users_questions.html
                 {% endif %}
             </div>
         </div>
