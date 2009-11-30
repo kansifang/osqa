@@ -37,7 +37,7 @@ MIDDLEWARE_CLASSES = (
 
 TEMPLATE_CONTEXT_PROCESSORS = global_settings.TEMPLATE_CONTEXT_PROCESSORS + (
     'django.core.context_processors.request',
-    'context_processors.settings',
+    'context_processors.application_settings',
     #'django.core.context_processors.i18n',
     'user_messages.context_processors.user_messages',#must be before auth
     'django.core.context_processors.auth', #this is required for admin
