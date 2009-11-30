@@ -14,14 +14,12 @@ from django.db.models.signals import post_delete, post_save, pre_save
 from django.utils.translation import ugettext as _
 from django.utils.safestring import mark_safe
 import django.dispatch
+import settings
 import logging
-from django.conf import settings
 
 if settings.USE_SPHINX_SEARCH == True:
     from djangosphinx.models import SphinxSearch
-from django_extensions.db.fields import AutoSlugField
 
-from cnprog.utils.html import sanitize_html
 from forum.managers import *
 from const import *
 
@@ -429,6 +427,25 @@ class AnonymousAnswer(models.Model):
                             author=user)
         self.delete()
 
+class AnonymousQuestion(models.Model):
+    title = models.CharField(max_length=300)
+    session_key = models.CharField(max_length=40)  #session id for anonymous questions
+    text = models.TextField()
+    summary = models.CharField(max_length=180)
+    tagnames = models.CharField(max_length=125)
+    wiki = models.BooleanField(default=False)
+    added_at = models.DateTimeField(default=datetime.datetime.now)
+    ip_addr = models.IPAddressField(max_length=21) #allow high port numbers
+    author = models.ForeignKey(User,null=True)
+
+    def publish(self,user):
+        from forum.views import create_new_question
+        added_at = datetime.datetime.now()
+        create_new_question(title=self.title, author=user, added_at=added_at,
+                                wiki=self.wiki, tagnames=self.tagnames,
+                                summary=self.summary, text=self.text)
+        self.delete()
+
 class Answer(models.Model):
     question = models.ForeignKey(Question, related_name='answers')
     author   = models.ForeignKey(User, related_name='answers')
@@ -645,27 +662,49 @@ QUESTIONS_PER_PAGE_CHOICES = (
    (50, u'50'),
 )
 
+def user_is_username_taken(cls,username):
+    try:
+        cls.objects.get(username=username)
+        return True
+    except cls.MultipleObjectsReturned:
+        return True
+    except cls.DoesNotExist:
+        return False
+
+def user_get_q_sel_email_feed_frequency(self):
+    print 'looking for frequency for user %s' % self
+    try:
+        feed_setting = EmailFeedSetting.objects.get(subscriber=self,feed_type='q_sel')
+    except Exception, e:
+        print 'have error %s' % e.message
+        raise e
+    print 'have freq=%s' % feed_setting.frequency
+    return feed_setting.frequency
+
 User.add_to_class('is_approved', models.BooleanField(default=False))
 User.add_to_class('email_isvalid', models.BooleanField(default=False))
 User.add_to_class('email_key', models.CharField(max_length=32, null=True))
 User.add_to_class('reputation', models.PositiveIntegerField(default=1))
 User.add_to_class('gravatar', models.CharField(max_length=32))
 User.add_to_class('favorite_questions',
-              models.ManyToManyField(Question, through=FavoriteQuestion,
-                                     related_name='favorited_by'))
+                  models.ManyToManyField(Question, through=FavoriteQuestion,
+                                         related_name='favorited_by'))
 User.add_to_class('badges', models.ManyToManyField(Badge, through=Award,
-                                              related_name='awarded_to'))
-User.add_to_class('gold', models.fields.SmallIntegerField(default=0))
-User.add_to_class('silver', models.fields.SmallIntegerField(default=0))
-User.add_to_class('bronze', models.fields.SmallIntegerField(default=0))
+                                                   related_name='awarded_to'))
+User.add_to_class('gold', models.SmallIntegerField(default=0))
+User.add_to_class('silver', models.SmallIntegerField(default=0))
+User.add_to_class('bronze', models.SmallIntegerField(default=0))
 User.add_to_class('questions_per_page',
-                 models.fields.SmallIntegerField(choices=QUESTIONS_PER_PAGE_CHOICES, default=10))
-User.add_to_class('last_seen', models.DateTimeField(default=datetime.datetime.now))
+                  models.SmallIntegerField(choices=QUESTIONS_PER_PAGE_CHOICES, default=10))
+User.add_to_class('last_seen',
+                  models.DateTimeField(default=datetime.datetime.now))
 User.add_to_class('real_name', models.CharField(max_length=100, blank=True))
 User.add_to_class('website', models.URLField(max_length=200, blank=True))
 User.add_to_class('location', models.CharField(max_length=100, blank=True))
 User.add_to_class('date_of_birth', models.DateField(null=True, blank=True))
 User.add_to_class('about', models.TextField(blank=True))
+User.add_to_class('is_username_taken',classmethod(user_is_username_taken))
+User.add_to_class('get_q_sel_email_feed_frequency',user_get_q_sel_email_feed_frequency)
 
 # custom signal
 tags_updated = django.dispatch.Signal(providing_args=["question"])

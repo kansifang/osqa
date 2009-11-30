@@ -26,7 +26,7 @@
             var answer_sort_tab = "{{ tab_id }}";
             $("#" + answer_sort_tab).attr('className',"on");
             
-            Vote.init({{ question.id }}, '{{ question.slug }}', '{{ question.author.id }}','{{ request.user.id }}');
+            Vote.init({{ question.id }}, '{{ question.author.id }}','{{ request.user.id }}');
             
             {% if not question.closed and request.user.is_authenticated %}initEditor();{% endif %}
             
@@ -242,8 +242,7 @@
                     </div>
                 </div>
                 {% cnprog_paginator context %}
-                
-                
+  
                 {% for answer in answers %}
                     <a name="{{ answer.id }}"></a>
                     <div id="answer-container-{{ answer.id }}" class="answer {% if answer.accepted %}accepted-answer{% endif %} {% ifequal answer.author_id question.author_id %} answered-by-owner{% endifequal %} {% if answer.deleted %}deleted{% endif %}">
@@ -368,7 +367,6 @@
                         </table>
                     </div>
                 {% endfor %}
-                
                 <div class="paginator-container-left">
                     {% cnprog_paginator context %}
                 </div>

@@ -277,7 +277,7 @@ var Vote = function(){
 
     var callback_favorite = function(object, voteType, data){
         if(data.allowed == "0" && data.success == "0"){
-            showMessage(object, favoriteAnonymousMessage.replace("{{QuestionSlug}}", questionSlug));
+            showMessage(object, favoriteAnonymousMessage.replace("{{QuestionID}}", questionId));
         }
         else if(data.status == "1"){
             object.attr("src", scriptUrl + "content/images/vote-favorite-off.png");
@@ -300,7 +300,7 @@ var Vote = function(){
         
     var callback_vote = function(object, voteType, data){
         if(data.allowed == "0" && data.success == "0"){
-            showMessage(object, voteAnonymousMessage.replace("{{QuestionSlug}}", questionSlug));
+            showMessage(object, voteAnonymousMessage.replace("{{QuestionID}}", questionId));
         }
         else if (data.allowed == "-3"){
             showMessage(object, voteRequiredMoreVotes);
@@ -375,9 +375,8 @@ var Vote = function(){
     };
         
     return {
-        init : function(id, slug, questionAuthor, userId){
-    	    questionId = id;
-    	    questionSlug = slug;
+        init : function(qId, questionAuthor, userId){
+            questionId = qId;
             questionAuthorId = questionAuthor;
             currentUserId = userId;
             bindEvents();

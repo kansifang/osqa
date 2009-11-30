@@ -22,7 +22,7 @@
 <div class="tabBar">
     <div class="headQuestions">{% trans "Questions" %}</div>
     <div class="tabsA">
-    	<a id="latest" href="{% url questions %}?sort=latest" title="{% trans "last updated questions" %}" >{% trans "newest" %}</a>
+    	 <a id="latest" href="{% url questions %}?sort=latest" title="{% trans "last updated questions" %}" >{% trans "newest" %}</a>
         <a id="hottest" href="{% url questions %}?sort=hottest" title="{% trans "hottest questions" %}" >{% trans "hottest" %}</a>
         <a id="mostvoted" href="{% url questions %}?sort=mostvoted" title="{% trans "most voted questions" %}" >{% trans "most voted" %}</a>
         <a id="all" href="{% url questions %}" title="{% trans "all questions" %}" >{% trans "all questions" %}</a>
@@ -57,13 +57,13 @@
         {% ifequal tab_id 'active'%}
         {% if question.wiki and settings.WIKI_ON %}
         <span class="from wiki">{% trans "community wiki" %}</span>
-        <span class="date" title="{{ question.last_activity_at }}">{% diff_date question.last_activity_at %}</span>
+        <span class="date" title="{{ question.added_at }}">{% diff_date question.added_at %}</span>
         {% else %}
         <div class="from">
             {% comment %}{% gravatar question.last_activity_by 24 %}{% endcomment %}
             <span class="author"><a href="{{ question.last_activity_by.get_profile_url }}">{{ question.last_activity_by }}</a></span>
             <span class="score">{% get_score_badge question.last_activity_by %} </span>
-            <span class="date" title="{{ question.last_activity_at }}">{{ question.last_activity_at }}</span>
+            <span class="date" title="{{ question.last_activity_at }}">{% diff_date question.last_activity_at %}</span>
         </div>
         {% endif %}
         {% else %}

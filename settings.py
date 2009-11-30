@@ -1,13 +1,9 @@
 # encoding:utf-8
 # Django settings for lanai project.
 import os.path
-from django.conf import global_settings
+import sys
 
 SITE_ID = 1
-
-SERVE_MEDIA = True
-
-MEDIA_URL = '/media/'
 
 ADMIN_MEDIA_PREFIX = '/forum/admin/media/'
 SECRET_KEY = '$oo^&_m&qwbib=(_4m_n*zn-d=g#s0he5fx9xonnym#8p6yigm'
@@ -18,10 +14,11 @@ TEMPLATE_LOADERS = (
 #     'django.template.loaders.eggs.load_template_source',
 )
 
-MIDDLEWARE_CLASSES = (   
+MIDDLEWARE_CLASSES = (
     'django.middleware.gzip.GZipMiddleware',
-    'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    #'django.middleware.locale.LocaleMiddleware',
+    'django.middleware.common.CommonMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.middleware.transaction.TransactionMiddleware',
     #'django.middleware.sqlprint.SqlPrintingMiddleware',
@@ -50,6 +47,16 @@ TEMPLATE_DIRS = (
     os.path.join(os.path.dirname(__file__), 'templates').replace('\\','/'),
 )
 
+#UPLOAD SETTINGS
+FILE_UPLOAD_TEMP_DIR = os.path.join(os.path.dirname(__file__), 'tmp').replace('\\','/')
+FILE_UPLOAD_HANDLERS = ("django.core.files.uploadhandler.MemoryFileUploadHandler",
+ "django.core.files.uploadhandler.TemporaryFileUploadHandler",)
+DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+# for user upload
+ALLOW_FILE_TYPES = ('.jpg', '.jpeg', '.gif', '.bmp', '.png', '.tiff')
+# unit byte
+ALLOW_MAX_FILE_SIZE = 1024 * 1024
+
 INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -57,15 +64,12 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.admin',
     'django.contrib.humanize',
-    'django_extensions',
-    'profiles',
+    'forum',
     'django_authopenid',
     'djangosphinx',
-    'forum',
     #'debug_toolbar' ,
     'user_messages',
 )
 
-<<<<<<< HEAD:settings.py
 # User settings
 from settings_local import *

@@ -13,9 +13,6 @@ from django.utils.translation import ugettext as _
 from django.utils.translation import ungettext
 from django.conf import settings
 
-from forum.const import *
-from forum.models import Question
-
 register = template.Library()
 
 GRAVATAR_TEMPLATE = ('<img class="gravatar" width="%(size)s" height="%(size)s" '

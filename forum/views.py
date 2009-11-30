@@ -98,11 +98,11 @@ def index(request):
     questions = Question.objects.get_questions_by_pagesize(orderby, INDEX_PAGE_SIZE)
     # RISK - inner join queries
     questions = questions.select_related()
-    tags = tag_queryset.order_by("-id")[:INDEX_TAGS_SIZE]
+    tags = Tag.objects.get_valid_tags(INDEX_TAGS_SIZE)
 
     awards = Award.objects.get_recent_awards()
 
-    return render_to_response(template_name, {
+    return render_to_response('index.html', {
                               "questions": questions,
                               "tab_id": view_id,
                               "tags": tags,
@@ -266,12 +266,51 @@ def create_new_answer(question=None, author=None, \
         except:
             pass
 
+def create_new_question(title=None, author=None, added_at=None,
+                        wiki=False, tagnames=None, summary=None,
+                        text=None):
+    """this is not a view
+    and maybe should become one of the methods on Question object?
+    """
+    html = sanitize_html(markdowner.convert(text))
+    question = Question(
+                        title=title,
+                        author=author,
+                        added_at=added_at,
+                        last_activity_at=added_at,
+                        last_activity_by=author,
+                        wiki=wiki,
+                        tagnames=tagnames,
+                        html=html,
+                        summary=summary
+                        )
+    if question.wiki:
+        question.last_edited_by = question.author
+        question.last_edited_at = added_at
+        question.wikified_at = added_at
+
+    question.save()
+
+    # create the first revision
+    QuestionRevision.objects.create(
+                                    question=question,
+                                    revision=1,
+                                    title=question.title,
+                                    author=author,
+                                    revised_at=added_at,
+                                    tagnames=question.tagnames,
+                                    summary=CONST['default_version'],
+                                    text=text
+                                    )
+    return question
+
 #TODO: allow anynomus user to ask question by providing email and username.
-@login_required
-def ask(request, form_class=AskForm):
+#@login_required
+def ask(request):
     if request.method == "POST":
-        form = form_class(request.POST)
+        form = AskForm(request.POST)
         if form.is_valid():
+
             added_at = datetime.datetime.now()
             title = strip_tags(form.cleaned_data['title']).strip()
             wiki = form.cleaned_data['wiki']
@@ -311,7 +350,7 @@ def ask(request, form_class=AskForm):
                 question.save()
                 return HttpResponseRedirect(reverse('user_signin_new_question'))
     else:
-        form = form_class()
+        form = AskForm()
 
     tags = _get_tags_cache_json()
     return render_to_response('ask.html', {
@@ -320,7 +359,7 @@ def ask(request, form_class=AskForm):
         'email_validation_faq_url':reverse('faq') + '#validate',
         }, context_instance=RequestContext(request))
 
-def question(request, slug, queryset=Question.objects.all(), template_name='question.html'):
+def question(request, id):
     try:
         page = int(request.GET.get('page', '1'))
     except ValueError:
@@ -346,7 +385,7 @@ def question(request, slug, queryset=Question.objects.all(), template_name='ques
 
     logging.debug('view_id=' + str(view_id))
 
-    question = get_object_or_404(queryset, id=id)
+    question = get_object_or_404(Question, id=id)
     if question.deleted and not can_view_deleted_post(request.user, question):
         raise Http404
     answer_form = AnswerForm(question, request.user)
@@ -789,6 +828,9 @@ def tags(request, queryset=Tag.objects.filter(deleted=False).exclude(used_count=
                                             }
         }, context_instance=RequestContext(request))
 
+def tag(request, tag):
+    return questions(request, tagname=tag)
+
 def vote(request, id):
     """
     vote_type:
@@ -1130,25 +1172,69 @@ def edit_user(request, id):
 
 def user_stats(request, user_id, user_view):
     user = get_object_or_404(User, id=user_id)
-    questions = Question.objects.filter(deleted__exact=False, author=user)\
-                                .annotate(favorited_myself = aggregates.Count('favorites') )\
-                                .order_by('-score', '-last_activity_at')[:100]
-        
+    questions = Question.objects.extra(
+                                       select={
+                                       'vote_count': 'question.score',
+                                       'favorited_myself': 'SELECT count(*) FROM favorite_question f WHERE f.user_id = %s AND f.question_id = question.id',
+                                       'la_user_id': 'auth_user.id',
+                                       'la_username': 'auth_user.username',
+                                       'la_user_gold': 'auth_user.gold',
+                                       'la_user_silver': 'auth_user.silver',
+                                       'la_user_bronze': 'auth_user.bronze',
+                                       'la_user_reputation': 'auth_user.reputation'
+                                       },
+                                       select_params=[user_id],
+                                       tables=['question', 'auth_user'],
+                                       where=['question.deleted = 0 AND question.author_id=%s AND question.last_activity_by_id = auth_user.id'],
+                                       params=[user_id],
+                                       order_by=['-vote_count', '-last_activity_at']
+                                       ).values('vote_count',
+        'favorited_myself',
+        'id',
+        'title',
+        'author_id',
+        'added_at',
+        'answer_accepted',
+        'answer_count',
+        'comment_count',
+        'view_count',
+        'favourite_count',
+        'summary',
+        'tagnames',
+        'vote_up_count',
+        'vote_down_count',
+        'last_activity_at',
+        'la_user_id',
+        'la_username',
+        'la_user_gold',
+        'la_user_silver',
+        'la_user_bronze',
+        'la_user_reputation')[:100]
+
     answered_questions = Question.objects.extra(
-                                                select={
-                                                'vote_up_count': 'answer.vote_up_count',
-                                                'vote_down_count': 'answer.vote_down_count',
-                                                'answer_id': 'answer.id',
-                                                'accepted': 'answer.accepted',
-                                                'vote_count': 'answer.score',
-                                                'comment_count': 'answer.comment_count',
-                                                },
-                                                tables=['question', 'answer'],
-                                                where=['answer.deleted=False AND answer.author_id=%s AND answer.question_id=question.id'],
-                                                params=[user_id],
-                                                order_by=['-vote_count', '-answer_id'],
-                                                select_params=[user_id]
-                                                ).distinct()[:100]
+        select={
+            'vote_up_count' : 'answer.vote_up_count',
+            'vote_down_count' : 'answer.vote_down_count',
+            'answer_id' : 'answer.id',
+            'accepted' : 'answer.accepted',
+            'vote_count' : 'answer.score',
+            'comment_count' : 'answer.comment_count'
+            },
+        tables=['question', 'answer'],
+        where=['answer.deleted=0 AND question.deleted=0 AND answer.author_id=%s AND answer.question_id=question.id'],
+        params=[user_id],
+        order_by=['-vote_count', '-answer_id'],
+        select_params=[user_id]
+    ).distinct().values('comment_count',
+                        'id',
+                        'answer_id',
+                        'title',
+                        'author_id',
+                        'accepted',
+                        'vote_count',
+                        'answer_count',
+                        'vote_up_count',
+                        'vote_down_count')[:100]
 
     up_votes = Vote.objects.get_up_vote_count_from_user(user)
     down_votes = Vote.objects.get_down_vote_count_from_user(user)
@@ -1222,14 +1308,13 @@ def user_stats(request, user_id, user_view):
 
 def user_recent(request, user_id, user_view):
     user = get_object_or_404(User, id=user_id)
-    
     def get_type_name(type_id):
         for item in TYPE_ACTIVITY:
             if type_id in item:
                 return item[1]
 
     class Event:
-        def __init__(self, time, type, title, summary, answer_id, question_slug):
+        def __init__(self, time, type, title, summary, answer_id, question_id):
             self.time = time
             self.type = get_type_name(type)
             self.type_id = type
@@ -1248,25 +1333,54 @@ def user_recent(request, user_id, user_view):
 
     activities = []
     # ask questions
-    #todo filter deleted questions
-    question_activity = Activity.objects.filter(content_type__id=question_type_id, user__id=user_id, 
-                                                activity_type=TYPE_ACTIVITY_ASK_QUESTION )\
-                                         .order_by('-active_at')
-
-    if len(question_activity) > 0:
-        questions = [(Event( qa.active_at, qa.activity_type, qa.content_object.title, '', '0', \
-                      qa.content_object.slug)) for qa in question_activity]
+    questions = Activity.objects.extra(
+        select={
+            'title' : 'question.title',
+            'question_id' : 'question.id',
+            'active_at' : 'activity.active_at',
+            'activity_type' : 'activity.activity_type'
+            },
+        tables=['activity', 'question'],
+        where=['activity.content_type_id = %s AND activity.object_id = ' +
+            'question.id AND question.deleted=0 AND activity.user_id = %s AND activity.activity_type = %s'],
+        params=[question_type_id, user_id, TYPE_ACTIVITY_ASK_QUESTION],
+        order_by=['-activity.active_at']
+    ).values(
+            'title',
+            'question_id',
+            'active_at',
+            'activity_type'
+            )
+    if len(questions) > 0:
+        questions = [(Event(q['active_at'], q['activity_type'], q['title'], '', '0', \
+                      q['question_id'])) for q in questions]
         activities.extend(questions)
 
     # answers
-    # todo filter deleted answers and deleted questions
-    answer_activity = Activity.objects.filter(content_type__id=answer_type_id, user__id=user_id, 
-                                                activity_type=TYPE_ACTIVITY_ANSWER )\
-                                         .order_by('-active_at')
-    
-    if len(answer_activity) > 0:
-        answers = [(Event(qa.active_at, qa.activity_type, qa.content_object.question.title, '', qa.object_id, \
-                    qa.content_object.question.slug)) for qa in answer_activity]
+    answers = Activity.objects.extra(
+        select={
+            'title' : 'question.title',
+            'question_id' : 'question.id',
+            'answer_id' : 'answer.id',
+            'active_at' : 'activity.active_at',
+            'activity_type' : 'activity.activity_type'
+            },
+        tables=['activity', 'answer', 'question'],
+        where=['activity.content_type_id = %s AND activity.object_id = answer.id AND ' + 
+            'answer.question_id=question.id AND answer.deleted=0 AND activity.user_id=%s AND '+ 
+            'activity.activity_type=%s AND question.deleted=0'],
+        params=[answer_type_id, user_id, TYPE_ACTIVITY_ANSWER],
+        order_by=['-activity.active_at']
+    ).values(
+            'title',
+            'question_id',
+            'answer_id',
+            'active_at',
+            'activity_type'
+            )
+    if len(answers) > 0:
+        answers = [(Event(q['active_at'], q['activity_type'], q['title'], '', q['answer_id'], \
+                    q['question_id'])) for q in answers]
         activities.extend(answers)
 
     # question comments
@@ -1294,7 +1408,7 @@ def user_recent(request, user_id, user_view):
 
     if len(comments) > 0:
         comments = [(Event(q['added_at'], q['activity_type'], q['title'], '', '0', \
-                     q['question_slug'])) for q in comments]
+                     q['question_id'])) for q in comments]
         activities.extend(comments)
 
     # answer comments
@@ -1370,7 +1484,7 @@ def user_recent(request, user_id, user_view):
 
     if len(revisions) > 0:
         revisions = [(Event(q['added_at'], q['activity_type'], q['title'], q['summary'], \
-                      q['answer_id'], q['question_slug'])) for q in revisions]
+                      q['answer_id'], q['question_id'])) for q in revisions]
         activities.extend(revisions)
 
     # accepted answers
@@ -1397,7 +1511,7 @@ def user_recent(request, user_id, user_view):
 
     if len(accept_answers) > 0:
         accept_answers = [(Event(q['added_at'], q['activity_type'], q['title'], '', '0', \
-                           q['question_slug'])) for q in accept_answers]
+                           q['question_id'])) for q in accept_answers]
         activities.extend(accept_answers)
     #award history
     awards = Activity.objects.extra(
@@ -1435,7 +1549,7 @@ def user_responses(request, user_id, user_view):
     We list answers for question, comments, and answer accepted by others for this user.
     """
     class Response:
-        def __init__(self, type, title, question_slug, answer_id, time, username, user_id, content):
+        def __init__(self, type, title, question_id, answer_id, time, username, user_id, content):
             self.type = type
             self.title = title
             self.titlelink = reverse('question', args=[question_id]) + u'%s#%s' % (slugify(title), answer_id)
@@ -1449,11 +1563,10 @@ def user_responses(request, user_id, user_view):
 
     user = get_object_or_404(User, id=user_id)
     responses = []
-    
-    answers = Answer.objects.filter(deleted__exact=False, question__deleted__exact=False).extra(
+    answers = Answer.objects.extra(
                                    select={
                                    'title': 'question.title',
-                                   'question_slug': 'question.slug',
+                                   'question_id': 'question.id',
                                    'answer_id': 'answer.id',
                                    'added_at': 'answer.added_at',
                                    'html': 'answer.html',
@@ -1462,13 +1575,13 @@ def user_responses(request, user_id, user_view):
                                    },
                                    select_params=[user_id],
                                    tables=['answer', 'question', 'auth_user'],
-                                   where=['answer.question_id = question.id AND ' +
+                                   where=['answer.question_id = question.id AND answer.deleted=0 AND question.deleted = 0 AND ' +
                                    'question.author_id = %s AND answer.author_id <> %s AND answer.author_id=auth_user.id'],
                                    params=[user_id, user_id],
                                    order_by=['-answer.id']
                                    ).values(
         'title',
-        'question_slug',
+        'question_id',
         'answer_id',
         'added_at',
         'html',
@@ -1476,28 +1589,29 @@ def user_responses(request, user_id, user_view):
         'user_id'
         )
     if len(answers) > 0:
-        answers = [(Response(TYPE_RESPONSE['QUESTION_ANSWERED'], a['title'], a['question_slug'],
+        answers = [(Response(TYPE_RESPONSE['QUESTION_ANSWERED'], a['title'], a['question_id'],
                     a['answer_id'], a['added_at'], a['username'], a['user_id'], a['html'])) for a in answers]
         responses.extend(answers)
 
+
     # question comments
-    comments = Comment.objects.filter(question__deleted__exact=False).extra(
+    comments = Comment.objects.extra(
                                      select={
                                      'title': 'question.title',
-                                     'question_slug': 'question.slug',
+                                     'question_id': 'comment.object_id',
                                      'added_at': 'comment.added_at',
                                      'comment': 'comment.comment',
                                      'username': 'auth_user.username',
                                      'user_id': 'auth_user.id'
                                      },
                                      tables=['question', 'auth_user', 'comment'],
-                                     where=['question.author_id = %s AND comment.object_id=question.id AND ' +
+                                     where=['question.deleted = 0 AND question.author_id = %s AND comment.object_id=question.id AND ' +
                                      'comment.content_type_id=%s AND comment.user_id <> %s AND comment.user_id = auth_user.id'],
                                      params=[user_id, question_type_id, user_id],
                                      order_by=['-comment.added_at']
                                      ).values(
         'title',
-        'question_slug',
+        'question_id',
         'added_at',
         'comment',
         'username',
@@ -1505,15 +1619,15 @@ def user_responses(request, user_id, user_view):
         )
 
     if len(comments) > 0:
-        comments = [(Response(TYPE_RESPONSE['QUESTION_COMMENTED'], c['title'], c['question_slug'],
+        comments = [(Response(TYPE_RESPONSE['QUESTION_COMMENTED'], c['title'], c['question_id'],
                      '', c['added_at'], c['username'], c['user_id'], c['comment'])) for c in comments]
         responses.extend(comments)
-    
+
     # answer comments
     comments = Comment.objects.extra(
                                      select={
                                      'title': 'question.title',
-                                     'question_slug': 'question.slug',
+                                     'question_id': 'question.id',
                                      'answer_id': 'answer.id',
                                      'added_at': 'comment.added_at',
                                      'comment': 'comment.comment',
@@ -1537,18 +1651,15 @@ def user_responses(request, user_id, user_view):
         )
 
     if len(comments) > 0:
-        comments = [(Response(TYPE_RESPONSE['ANSWER_COMMENTED'], c['title'], c['question_slug'],
+        comments = [(Response(TYPE_RESPONSE['ANSWER_COMMENTED'], c['title'], c['question_id'],
                      c['answer_id'], c['added_at'], c['username'], c['user_id'], c['comment'])) for c in comments]
         responses.extend(comments)
-    
+
     # answer has been accepted
-    answers = Answer.objects.filter(deleted__exact=False, 
-                                    question__deleted__exact=False, 
-                                    accepted__exact=True)\
-                            .extra(
+    answers = Answer.objects.extra(
                                    select={
                                    'title': 'question.title',
-                                   'question_slug': 'question.slug',
+                                   'question_id': 'question.id',
                                    'answer_id': 'answer.id',
                                    'added_at': 'answer.accepted_at',
                                    'html': 'answer.html',
@@ -1557,13 +1668,13 @@ def user_responses(request, user_id, user_view):
                                    },
                                    select_params=[user_id],
                                    tables=['answer', 'question', 'auth_user'],
-                                   where=['answer.question_id = question.id AND ' +
-                                   'answer.author_id = %s AND question.author_id=auth_user.id'],
+                                   where=['answer.question_id = question.id AND answer.deleted=0 AND question.deleted = 0 AND ' +
+                                   'answer.author_id = %s AND answer.accepted=1 AND question.author_id=auth_user.id'],
                                    params=[user_id],
                                    order_by=['-answer.id']
                                    ).values(
         'title',
-        'question_slug',
+        'question_id',
         'answer_id',
         'added_at',
         'html',
@@ -1571,10 +1682,10 @@ def user_responses(request, user_id, user_view):
         'user_id'
         )
     if len(answers) > 0:
-        answers = [(Response(TYPE_RESPONSE['ANSWER_ACCEPTED'], a['title'], a['question_slug'],
+        answers = [(Response(TYPE_RESPONSE['ANSWER_ACCEPTED'], a['title'], a['question_id'],
                     a['answer_id'], a['added_at'], a['username'], a['user_id'], a['html'])) for a in answers]
         responses.extend(answers)
-    
+
     # sort posts by time
     responses.sort(lambda x, y: cmp(y.time, x.time))
 
@@ -1595,7 +1706,7 @@ def user_votes(request, user_id, user_view):
     question_votes = Vote.objects.extra(
                                         select={
                                         'title': 'question.title',
-                                        'question_slug': 'question.slug',
+                                        'question_id': 'question.id',
                                         'answer_id': 0,
                                         'voted_at': 'vote.voted_at',
                                         'vote': 'vote',
@@ -1608,7 +1719,7 @@ def user_votes(request, user_id, user_view):
                                         order_by=['-vote.id']
                                         ).values(
         'title',
-        'question_slug',
+        'question_id',
         'answer_id',
         'voted_at',
         'vote',
@@ -1619,7 +1730,7 @@ def user_votes(request, user_id, user_view):
     answer_votes = Vote.objects.extra(
                                       select={
                                       'title': 'question.title',
-                                      'question_slug': 'question.slug',
+                                      'question_id': 'question.id',
                                       'answer_id': 'answer.id',
                                       'voted_at': 'vote.voted_at',
                                       'vote': 'vote',
@@ -1632,7 +1743,7 @@ def user_votes(request, user_id, user_view):
                                       order_by=['-vote.id']
                                       ).values(
         'title',
-        'question_slug',
+        'question_id',
         'answer_id',
         'voted_at',
         'vote',
@@ -1984,12 +2095,42 @@ def book(request, short_name, unanswered=False):
                                   }, context_instance=RequestContext(request))
 
 @login_required
-def ask_book(request, short_name, form_class=AskForm):
+def ask_book(request, short_name):
     if request.method == "POST":
-        form = form_class(request.POST)
+        form = AskForm(request.POST)
         if form.is_valid():
-            question = form.save(request)
+            added_at = datetime.datetime.now()
+            html = sanitize_html(markdowner.convert(form.cleaned_data['text']))
+            question = Question(
+                                title=strip_tags(form.cleaned_data['title']),
+                                author=request.user,
+                                added_at=added_at,
+                                last_activity_at=added_at,
+                                last_activity_by=request.user,
+                                wiki=form.cleaned_data['wiki'],
+                                tagnames=form.cleaned_data['tags'].strip(),
+                                html=html,
+                                summary=strip_tags(html)[:120]
+                                )
+            if question.wiki:
+                question.last_edited_by = question.author
+                question.last_edited_at = added_at
+                question.wikified_at = added_at
 
+            question.save()
+
+            # create the first revision
+            QuestionRevision.objects.create(
+                                            question=question,
+                                            revision=1,
+                                            title=question.title,
+                                            author=request.user,
+                                            revised_at=added_at,
+                                            tagnames=question.tagnames,
+                                            summary=CONST['default_version'],
+                                            text=form.cleaned_data['text']
+                                            )
+            
             books = Book.objects.extra(where=['short_name = %s'], params=[short_name])
             match_count = len(books)
             if match_count == 1:
@@ -1999,7 +2140,7 @@ def ask_book(request, short_name, form_class=AskForm):
 
             return HttpResponseRedirect(question.get_absolute_url())
     else:
-        form = form_class()
+        form = AskForm()
 
     tags = _get_tags_cache_json()
     return render_to_response('ask.html', 

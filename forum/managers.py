@@ -115,6 +115,11 @@ class TagManager(models.Manager):
             'WHERE tag_id = tag.id AND question.deleted=0'
         ') '
         'WHERE id IN (%s)')
+
+    def get_valid_tags(self, page_size):
+      from forum.models import Tag
+      tags = Tag.objects.all().filter(deleted=False).exclude(used_count=0).order_by("-id")[:page_size]
+      return tags
     
     def get_or_create_multiple(self, names, user):
         """
