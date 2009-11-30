@@ -1,4 +1,4 @@
-#example wsgi setup script
+#an example wsgi setup script
 import os
 import sys
 sys.path.append('/path/above_forum')
