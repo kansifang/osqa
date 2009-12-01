@@ -4,6 +4,8 @@ from django.contrib import admin
 from forum import views as app
 from forum.feed import RssLastestQuestionsFeed
 from django.utils.translation import ugettext as _
+from forum.models import Question
+from django.db.models import Count
 
 admin.autodiscover()
 feeds = {
@@ -11,6 +13,13 @@ feeds = {
 }
 
 APP_PATH = os.path.dirname(os.path.dirname(__file__))
+
+unanswered_info = {
+    'template_name': 'unanswered.html',
+    'queryset': Question.objects.annotate(answer_count=Count('answers')).filter(answer_count=0),
+    'extra_context': {'is_unanswered':True},
+}
+
 urlpatterns = patterns('',
     url(r'^$', app.index, name='index'),
     (r'^favicon\.ico$', 'django.views.generic.simple.redirect_to', {'url': '/content/images/favicon.ico'}),
@@ -31,7 +40,7 @@ urlpatterns = patterns('',
     url(r'^%s(?P<id>\d+)/%s$' % (_('answers/'), _('revisions/')), app.answer_revisions, name='answer_revisions'),
     url(r'^%s$' % _('questions/'), app.questions, name='questions'),
     url(r'^%s%s$' % (_('questions/'), _('ask/')), app.ask, name='ask'),
-    url(r'^%s%s$' % (_('questions/'), _('unanswered/')), app.unanswered, name='unanswered'),
+    url(r'^%s%s$' % (_('questions/'), _('unanswered/')), app.questions, unanswered_info, name='unanswered'),
     url(r'^%s(?P<id>\d+)/%s$' % (_('questions/'), _('edit/')), app.edit_question, name='edit_question'),
     url(r'^%s(?P<id>\d+)/%s$' % (_('questions/'), _('close/')), app.close, name='close'),
     url(r'^%s(?P<id>\d+)/%s$' % (_('questions/'), _('reopen/')), app.reopen, name='reopen'),
@@ -50,7 +59,7 @@ urlpatterns = patterns('',
     #place general question item in the end of other operations
     url(r'^%s(?P<id>\d+)//*' % _('question/'), app.question, name='question'),
     url(r'^%s$' % _('tags/'), app.tags, name='tags'),
-    url(r'^%s(?P<tag>[^/]+)/$' % _('tags/'), app.tag, name='tag_questions'),
+    url(r'^%s(?P<tag>[^/]+)/$' % _('tags/'), app.tagged_search, name='tag_search'),
     url(r'^%s$' % _('users/'),app.users, name='users'),
     url(r'^%s(?P<id>\d+)/$' % _('moderate-user/'), app.moderate_user, name='moderate_user'),
     url(r'^%s(?P<id>\d+)/%s$' % (_('users/'), _('edit/')), app.edit_user, name='edit_user'),

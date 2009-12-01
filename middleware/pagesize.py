@@ -30,4 +30,8 @@ class QuestionsPageSizeMiddleware(object):
 
     def process_exception(self,request,exception):
         import logging
+        import traceback
         logging.debug('have exception %s' % str(exception))
+        stack = traceback.format_stack()
+        logging.debug(''.join(stack))
+

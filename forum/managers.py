@@ -153,10 +153,7 @@ class TagManager(models.Manager):
         transaction.commit_unless_managed()
     
     def get_tags_by_questions(self, questions):
-        return self.filter(questions__id__in=[q.id for q in questions])
-            
-        
-        
+        return self.filter(questions__id__in=[q.id for q in questions]).distinct()
 
 class AnswerManager(models.Manager):
     GET_ANSWERS_FROM_USER_QUESTIONS = u'SELECT answer.* FROM answer INNER JOIN question ON answer.question_id = question.id WHERE question.author_id =%s AND answer.author_id <> %s'

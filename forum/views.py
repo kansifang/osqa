@@ -159,29 +159,21 @@ def questions(request, queryset=Question.objects.all(), template_name='questions
     view_dic = {"latest":"-added_at", "active":"-last_activity_at", "hottest":"-answer_count", "mostvoted":"-score" }
     view_id, orderby = _get_and_remember_questions_sort_method(request,view_dic,'latest')
 
-    # check if request is from tagged questions
-    if tagname is not None:
-        objects = Question.objects.get_questions_by_tag(tagname, orderby)
-    elif unanswered:
-        #check if request is from unanswered questions
-        template_file = "unanswered.html"
-        objects = Question.objects.get_unanswered_questions(orderby)
-    else:
-        objects = Question.objects.get_questions(orderby)
+    queryset = queryset.order_by(orderby)
 
     author_name = None
     if 'user' in request.GET:
         try:
             author_name = request.GET['user']
             u = User.objects.get(username=author_name)
-            objects = objects.filter(Q(author=u) | Q(answers__author=u))
+            queryset = queryset.filter(Q(author=u) | Q(answers__author=u))
         except User.DoesNotExist:
             author_name = None
 
     # RISK - inner join queries
-    objects = objects.select_related(depth=1).order_by(orderby)
+    queryset = queryset.select_related(depth=1).order_by(orderby)
 
-    objects_list = Paginator(objects, pagesize)
+    objects_list = Paginator(queryset, pagesize)
     questions = objects_list.page(page)
 
     # Get related tags from this page objects
@@ -189,14 +181,13 @@ def questions(request, queryset=Question.objects.all(), template_name='questions
         related_tags = Tag.objects.get_tags_by_questions(questions.object_list)
     else:
         related_tags = None
+
     extra = {
               "questions": questions,
               "author_name": author_name,
               "tab_id": view_id,
               "questions_count": objects_list.count,
               "tags": related_tags,
-              "searchtag": tagname,
-              "is_unanswered": unanswered,
               "context": {
                   'is_paginated': True,
                   'pages': objects_list.num_pages,
@@ -207,15 +198,16 @@ def questions(request, queryset=Question.objects.all(), template_name='questions
                   'next': questions.next_page_number(),
                   'base_url': request.path + '?sort=%s&' % view_id,
                   'pagesize': pagesize
+                   }
            }
-    
+
     if extra_context is not None:
         extra.update(extra_context)
     
     return render_to_response(template_name, extra, context_instance=RequestContext(request))
 
 def tagged_search(request, tag, queryset=Question.objects.all(), template_name='questions.html'):
-    queryset = queryset.filter(Q(tags__name__icontains=unquote(tag)))
+    queryset = queryset.filter(tags__name__icontains=unquote(tag))
     return questions(request, queryset, template_name, extra_context={'searchtag':tag})
 
 def create_new_answer(question=None, author=None, \

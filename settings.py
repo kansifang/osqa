@@ -2,6 +2,7 @@
 # Django settings for lanai project.
 import os.path
 import sys
+from django.conf import global_settings
 
 SITE_ID = 1
 
