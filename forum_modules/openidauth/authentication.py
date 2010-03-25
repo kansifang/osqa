@@ -1,6 +1,34 @@
 from consumer import OpenIdAbstractAuthConsumer
 from forum.authentication.base import ConsumerTemplateContext
+"""
+class AdobeAuthConsumer(OpenIdAbstractAuthConsumer):
+    def get_user_url(self, request):
+        return 'https://openid.corp.adobe.com/dir'
 
+class AdobeAuthContext(ConsumerTemplateContext):
+    mode = 'BIGICON'
+    type = 'DIRECT'
+    weight = 200
+    human_name = 'Adobe'
+    icon = '/media/images/openid/adobe.gif'
+"""
+class AdobeAuthConsumer(OpenIdAbstractAuthConsumer):
+    def get_user_url(self, request):
+        name = request.POST['input_field']
+        return "https://openid.corp.adobe.com/dir/%s" % name
+
+class AdobeAuthContext(ConsumerTemplateContext):
+    mode = 'SMALLICON'
+    type = 'SIMPLE_FORM'
+    simple_form_context = {
+        'your_what': 'Adobe LDAP user name'
+    }
+    weight = 250
+    human_name = 'Adobe OpenID LDAP'
+    icon = '/media/images/openid/adobe.ico'
+
+
+"""
 class GoogleAuthConsumer(OpenIdAbstractAuthConsumer):
     def get_user_url(self, request):
         return 'https://www.google.com/accounts/o8/id'
@@ -183,7 +211,7 @@ class VerisignAuthContext(ConsumerTemplateContext):
     weight = 340
     human_name = 'Verisign'
     icon = '/media/images/openid/verisign.ico'
-
+"""
     
 class OpenIdUrlAuthConsumer(OpenIdAbstractAuthConsumer):
     pass

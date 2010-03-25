@@ -1,6 +1,7 @@
 *.pyc
 *.swp
 *.log
+Thumbs.db
 cache/??
 osqa.wsgi
 nbproject
@@ -8,7 +9,8 @@ settings_local.py
 .idea
 *.iml
 env
-nbproject
 pip-log.txt
 *.zip
 tmp/*
+/robots.txt
+
