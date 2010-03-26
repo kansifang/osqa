@@ -8,7 +8,7 @@ class SettingSet(list):
         self.description = description
         self.weight = weight
 
-class BaseSetting():
+class BaseSetting:
     def __init__(self, name, default, field_context):
         self.name = name
         self.default = default
